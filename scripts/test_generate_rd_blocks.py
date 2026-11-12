@@ -216,12 +216,13 @@ class GeneratorTests(unittest.TestCase):
 
     def test_metadata_is_removed_only_when_control_flow_stays_in_prefix(self) -> None:
         metadata = bytes.fromhex("a1005b0000000000000000000b")
-        safe = ("00", "600456005b00")
+        # 0xef has no RD step: it halts or falls through to the STOP.
+        safe = ("00", "600456005b00", "ef00")
         for prefix in safe:
             with self.subTest(prefix=prefix):
                 code = bytes.fromhex(prefix) + metadata
                 self.assertEqual(rd.strip_solidity_metadata(code), bytes.fromhex(prefix))
-        uncertain = ("5f355600", "60065600", "5b5f600057", "5b", "61ab", "ef00")
+        uncertain = ("5f355600", "60065600", "5b5f600057", "5b", "61ab", "ef")
         for prefix in uncertain:
             with self.subTest(prefix=prefix):
                 code = bytes.fromhex(prefix) + metadata
@@ -255,10 +256,13 @@ class GeneratorTests(unittest.TestCase):
 
     def test_metadata_closure_keeps_reachable_boundaries(self) -> None:
         metadata = bytes.fromhex("a15b000003")
-        for prefix in ("5f355600", "5f600057", "ef00"):
+        # SELFBALANCE has no RD step; here it falls through into the suffix.
+        for prefix in ("5f355600", "5f600057", "47"):
             with self.subTest(prefix=prefix):
                 code = bytes.fromhex(prefix) + metadata
                 self.assertEqual(rd.strip_solidity_metadata(code), code)
+        selfbalance = bytes.fromhex("4700")
+        self.assertEqual(rd.strip_solidity_metadata(selfbalance + metadata), selfbalance)
         # An unreachable PUSH straddles the metadata boundary.
         prefix = bytes.fromhex("0061")
         self.assertEqual(rd.strip_solidity_metadata(prefix + metadata), prefix)

@@ -259,9 +259,10 @@ def metadata_suffix_is_unreachable(code: bytes, boundary: int,
     itself cannot be a jump destination, so the PUSH must have been executed.
     With an arbitrary appended tail, a constant target outside the template can
     return to any template JUMPDEST. Unknown patch layouts must be handled by
-    retaining metadata; None here means that no patches are modeled. Known
-    fallthrough instructions such as CALL are safe to follow even when the
-    block generator has no RD step for them.
+    retaining metadata; None here means that no patches are modeled. An
+    instruction the block generator has no RD step for is followed to the next
+    one: only JUMP and JUMPI move the pc elsewhere within the code, and an
+    undefined opcode halts.
     """
     instructions = disassemble(code)
     by_pc = {ins.pc: ins for ins in instructions}
@@ -277,7 +278,7 @@ def metadata_suffix_is_unreachable(code: bytes, boundary: int,
         if pc >= boundary:
             return False
         ins = by_pc.get(pc)
-        if ins is None or not ins.complete or ins.name.startswith("unsupported_"):
+        if ins is None or not ins.complete:
             return False
         if ins.opcode in {0x56, 0x57}:
             prev = previous.get(pc)
