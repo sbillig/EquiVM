@@ -128,6 +128,19 @@ for a complete Vyper proof and `Examples/VyperImmutable` for the immutable suffi
 | `check_sol2stele.py` | report | Translates every given directory (solc or Vyper, by the build JSON) and elaborates the drafts (holes as comments). |
 | `finish_check.py` | report | Build, differential suite on the contract (`--difftest-count`, `--skip-difftest`), `sorry`/`admit`/`axiom` grep, `#print axioms` against the accepted trusted base. |
 | `check_all_benchmark_blocks.py` | report | Check that benchmark block summaries compile, excluding temporary contracts under `Benchmarks/Scaffolds/`. CI selects `UniswapV3/Pool`. |
+| `audit_safe.py` | report and generated inventories | Reproduce Safe artifacts and check the runtime and constructor-prefix inventories. |
+| `Benchmarks/EAS/Attester/generate_blocks.py` | generated inventories | Generate immutable-aware runtime summaries and a constructor-prefix inventory. |
+
+The Safe and Attester constructor inventories select the prefix before the embedded runtime
+without applying `creation_constructor_code`'s conservative reachability check. Whether that
+prefix covers every reachable constructor path is an open coverage question; in particular, the
+Attester constructor has a computed return jump at pc 143. No reachable path into its embedded
+runtime has been established.
+
+Metadata stripping treats bytecode without modeled patches as concrete. If a build record is
+present but its immutable patch layout is unknown or invalid, the scaffold and bytecode report
+retain the suffix: without a validated layout, they cannot assume that patching preserves the
+instruction and jump-destination sweep.
 
 `scaffold.py lean --selector-facts facts.json` can reuse previously proved selector hashes. The
 JSON object maps a full ABI signature to its Lean module and theorem, for example
