@@ -228,6 +228,59 @@ class GeneratorTests(unittest.TestCase):
         self.assertIn("decode_append_left_of_decode", rendered)
         self.assertIn("RD (sampleCode ++ tail)", rendered)
 
+    def test_creation_runtime_omits_unreachable_suffix(self) -> None:
+        # Both paths stay in the prefix; pc 8 is a runtime-only JUMPDEST.
+        constructor = bytes.fromhex("5f6006575b005b00")
+        runtime = bytes.fromhex("5b00")
+        code = constructor + runtime
+        records = rd.generate_unit_records(code, "sample", "sampleCode",
+                                           keep_metadata=True, creation_code=True,
+                                           creation_runtime=runtime)
+        self.assertTrue(records)
+        self.assertTrue(all(pc < len(constructor) for unit in records for pc in unit.pcs))
+        self.assertIn("sampleCode.size = 10", "\n".join(unit.text for unit in records))
+        self.assertTrue(any(pc == len(constructor) for unit in rd.generate_unit_records(
+            code, "sample", "sampleCode", keep_metadata=True, creation_code=True)
+                            for pc in unit.pcs))
+
+    def test_creation_runtime_keeps_uncertain_control_flow(self) -> None:
+        runtime = bytes.fromhex("5b00")
+        cases = {
+            "dynamic jump": "5f355600",
+            "jump into runtime": "60045600",
+            "jump into arbitrary tail": "60ff5600",
+            "conditional fallthrough": "5b5f600057",
+            "ordinary fallthrough": "5b",
+            "push crossing boundary": "61ab",
+            "unknown opcode": "ef00",
+        }
+        for label, constructor in cases.items():
+            with self.subTest(label=label):
+                code = bytes.fromhex(constructor) + runtime
+                self.assertEqual(rd.creation_constructor_code(code, runtime), code)
+
+    def test_creation_runtime_ignores_push_payload_bytes(self) -> None:
+        constructor = bytes.fromhex("61565b5000")
+        runtime = bytes.fromhex("5b00")
+        self.assertEqual(rd.creation_constructor_code(constructor + runtime, runtime), constructor)
+
+    def test_uncertain_creation_keeps_metadata_like_suffix(self) -> None:
+        # The suffix resembles solc metadata, but a dynamic jump could enter it.
+        constructor = bytes.fromhex("5f355600")
+        runtime = bytes.fromhex("a00001")
+        records = rd.generate_unit_records(constructor + runtime, "sample", "sampleCode",
+                                           creation_code=True, creation_runtime=runtime)
+        self.assertTrue(any(pc == len(constructor) for unit in records for pc in unit.pcs))
+
+    def test_creation_runtime_requires_exact_nonempty_suffix(self) -> None:
+        code = bytes.fromhex("005b00")
+        for runtime in (b"", bytes.fromhex("5b01")):
+            with self.subTest(runtime=runtime), self.assertRaisesRegex(ValueError, "nonempty suffix"):
+                rd.generate_unit_records(code, "sample", "sampleCode", creation_code=True,
+                                         creation_runtime=runtime)
+        with self.assertRaisesRegex(ValueError, "requires creation code"):
+            rd.generate_unit_records(code, "sample", "sampleCode", creation_runtime=bytes.fromhex("5b00"))
+
     def test_creation_jump_destination_substitutes_codecopy_source(self) -> None:
         from bytecode_io import read_bytecode
         creation = read_bytecode(Path(__file__).resolve().parent.parent /

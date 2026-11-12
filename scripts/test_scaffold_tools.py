@@ -26,6 +26,29 @@ def tiny_runtime() -> bytes:
     return read_bytecode(ROOT / "Examples/TinyImmutable/runtime.hex")
 
 
+class CreationBlocksTests(unittest.TestCase):
+    def test_scaffold_omits_only_a_proven_runtime_suffix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            runtime = bytes.fromhex("5b00")
+            (directory / "runtime.hex").write_text(runtime.hex())
+            args = argparse.Namespace(dir=directory, contract="Sample", module="Sample",
+                                      namespace=None, prefix=None, max_summary_instructions=64,
+                                      shard_size=20, no_creation=False)
+            safe = bytes.fromhex("5f6006575b005b00") + runtime
+            (directory / "creation.hex").write_text(safe.hex())
+            self.assertEqual(scaffold.cmd_blocks(args), 0)
+            index = (directory / "CreationBlocks.index").read_text()
+            self.assertNotIn("sampleCreation_block_8", index)
+
+            # A computed jump may enter the runtime or an appended argument tail.
+            dynamic = bytes.fromhex("5f355600") + runtime
+            (directory / "creation.hex").write_text(dynamic.hex())
+            self.assertEqual(scaffold.cmd_blocks(args), 0)
+            index = (directory / "CreationBlocks.index").read_text()
+            self.assertIn("sampleCreation_block_4", index)
+
+
 class JumpDestTests(unittest.TestCase):
     def test_push_data_is_skipped(self) -> None:
         # PUSH2 0x5b5b JUMPDEST: only the real JUMPDEST at pc 3 counts.

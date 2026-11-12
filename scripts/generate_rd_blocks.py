@@ -21,7 +21,10 @@ Example:
 For creation bytecode, ``--creation-code`` treats ``--code-term`` as the fixed
 compiler-produced prefix.  Every summary quantifies an arbitrary ``tail`` and
 runs over ``codeTerm ++ tail``; instruction decodes and jump destinations are
-lifted from the fixed prefix.
+lifted from the fixed prefix.  ``--creation-runtime`` supplies the runtime
+bytecode; if it is an exact suffix and control flow cannot enter it, summaries
+are generated only for the constructor.  Unresolved jumps and uncertain
+instruction boundaries retain summaries for the entire creation bytecode.
 
 For runtime immutables, pass an imported Lean layout with
 ``--layout-term MyContract.immutableLayout`` and ``--import MyContract.Immutables``.
@@ -240,6 +243,14 @@ def suffix_is_unreachable(code: bytes, boundary: int,
             if target is None or target >= boundary:
                 return False
     return True
+
+
+def creation_constructor_code(code: bytes, runtime: bytes) -> bytes:
+    """Omit an embedded runtime only when the constructor cannot reach it."""
+    if not runtime or not code.endswith(runtime):
+        raise ValueError("creation runtime must be a nonempty suffix of creation bytecode")
+    boundary = len(code) - len(runtime)
+    return code[:boundary] if suffix_is_unreachable(code, boundary) else code
 
 
 def blocks(instructions: list[Instruction]) -> list[list[Instruction]]:
@@ -1437,17 +1448,22 @@ def generate_unit_records(code: bytes, prefix: str, code_term: str,
                           runtime_suffix: bool = False,
                           vyper_scalar_slots: dict[int, str] | None = None,
                           vyper_layout_term: str | None = None,
-                          vyper_suffix_size: int | None = None) -> list[GeneratedUnit]:
+                          vyper_suffix_size: int | None = None,
+                          creation_runtime: bytes | None = None) -> list[GeneratedUnit]:
     """Generate theorem/comment units with index metadata and no module wrapper."""
     if runtime_suffix and (creation_code or immutable_sites is not None or layout_term is not None):
         raise ValueError("runtime suffix and other patch modes are separate")
+    if creation_runtime is not None and not creation_code:
+        raise ValueError("creation runtime requires creation code")
     if immutable_sites is not None and not layout_term:
         raise ValueError("immutable mode requires an imported Lean layout term")
     if (vyper_scalar_slots is not None or vyper_suffix_size is not None) and (
             not runtime_suffix or not vyper_layout_term):
         raise ValueError("Vyper immutable mode requires a runtime suffix and layout term")
     prefix = lean_ident(prefix)
-    analyzed_code = code if keep_metadata else strip_solidity_metadata(code, immutable_sites)
+    analyzed_code = (creation_constructor_code(code, creation_runtime)
+                     if creation_runtime is not None else
+                     code if keep_metadata else strip_solidity_metadata(code, immutable_sites))
     discovered_blocks = blocks(disassemble(analyzed_code))
     unsupported = [
         ins for block in discovered_blocks for ins in block if not instruction_is_supported(ins)
@@ -1516,13 +1532,15 @@ def generate_units(code: bytes, prefix: str, code_term: str,
                    runtime_suffix: bool = False,
                    vyper_scalar_slots: dict[int, str] | None = None,
                    vyper_layout_term: str | None = None,
-                   vyper_suffix_size: int | None = None) -> list[str]:
+                   vyper_suffix_size: int | None = None,
+                   creation_runtime: bytes | None = None) -> list[str]:
     """Generate theorem/comment units without a Lean module wrapper."""
     return [
         unit.text for unit in generate_unit_records(
             code, prefix, code_term, fail_on_unsupported, keep_metadata,
             max_summary_instructions, creation_code, immutable_sites, layout_term,
-            runtime_suffix, vyper_scalar_slots, vyper_layout_term, vyper_suffix_size
+            runtime_suffix, vyper_scalar_slots, vyper_layout_term, vyper_suffix_size,
+            creation_runtime
         )
     ]
 
@@ -1693,12 +1711,13 @@ def generate(code: bytes, prefix: str, code_term: str, imports: list[str],
              immutable_sites: dict[int, tuple[int, str]] | None = None,
              layout_term: str | None = None,
              runtime_suffix: bool = False,
-             namespace: str | None = None) -> str:
+             namespace: str | None = None,
+             creation_runtime: bytes | None = None) -> str:
     """Generate a single Lean module. Use ``write_outputs`` for file sharding."""
     units = generate_unit_records(code, prefix, code_term, fail_on_unsupported,
                                   keep_metadata, max_summary_instructions,
                                   creation_code, immutable_sites, layout_term,
-                                  runtime_suffix)
+                                  runtime_suffix, creation_runtime=creation_runtime)
     return render_module(prefix, imports, units, creation_code, code_term,
                          immutable_sites, code, layout_term, runtime_suffix,
                          namespace=namespace)
@@ -1854,6 +1873,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--creation-code", action="store_true",
                         help="quantify an arbitrary constructor-argument tail and summarize "
                              "--code-term ++ tail, lifting decodes and jumps from --code-term")
+    parser.add_argument("--creation-runtime", type=Path,
+                        help="runtime bytecode suffix to omit when the constructor cannot reach it")
     parser.add_argument("--layout-term",
                         help="imported Lean Layout term for immutable-aware runtime summaries")
     parser.add_argument("--runtime-suffix", action="store_true",
@@ -1863,6 +1884,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("provide exactly one of BYTECODE or --hex")
     if args.creation_code and (args.layout_term is not None or args.runtime_suffix):
         parser.error("--creation-code and runtime patch modes are separate")
+    if args.creation_runtime is not None and not args.creation_code:
+        parser.error("--creation-runtime requires --creation-code")
     if args.runtime_suffix and args.layout_term is not None:
         parser.error("--runtime-suffix and --layout-term are separate modes")
     try:
@@ -1876,7 +1899,9 @@ def main(argv: list[str] | None = None) -> int:
                                       args.fail_on_unsupported, args.keep_metadata,
                                       args.max_summary_instructions,
                                       args.creation_code, immutable_sites,
-                                      layout_term, args.runtime_suffix)
+                                      layout_term, args.runtime_suffix,
+                                      creation_runtime=(read_bytecode(args.creation_runtime)
+                                                        if args.creation_runtime else None))
         paths = write_outputs(args.output, args.name, imports, units,
                               args.shard_size, args.creation_code, args.code_term,
                               args.index_output, immutable_sites, code,

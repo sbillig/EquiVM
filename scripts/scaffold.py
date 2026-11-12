@@ -1009,7 +1009,8 @@ def cmd_blocks(args: argparse.Namespace) -> int:
     if creation_path.exists() and not args.no_creation:
         creation = read_bytecode(creation_path)
         units = rd.generate_unit_records(creation, f"{prefix}Creation", f"{namespace}.{prefix}CreationBytecode",
-                                         False, False, args.max_summary_instructions, True, None, None, False)
+                                         False, False, args.max_summary_instructions, True, None, None, False,
+                                         creation_runtime=runtime if runtime and creation.endswith(runtime) else None)
         paths = rd.write_outputs(directory / "CreationBlocks.lean", f"{prefix}Creation", [bytecode_import],
                                  units, args.shard_size, True, f"{namespace}.{prefix}CreationBytecode")
         print(f"wrote {len(paths)} creation summary shards ({len(units)} units) and CreationBlocks.index")
