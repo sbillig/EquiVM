@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
-import sys
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -21,6 +23,26 @@ def units(hex_code: str, **kwargs: object) -> str:
 
 
 class GeneratorTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("lake") and
+                         (Path(__file__).resolve().parent.parent /
+                          ".lake/build/lib/lean/Reasoning/Reach.olean").is_file(),
+                         "built Lean dependencies required")
+    def test_blockhash_summaries_elaborate(self) -> None:
+        # The first block normalizes counters before GAS; the second does so at its end.
+        code = bytes.fromhex("405a5b40")
+        rendered = rd.generate(code, "sample", "sampleCode", [], keep_metadata=True)
+        rendered = rendered.replace(
+            "open Stele ABI Ethereum Ethereum.EVM",
+            "def sampleCode : ByteArray := ⟨#[0x40, 0x5a, 0x5b, 0x40]⟩\n\n"
+            "open Stele ABI Ethereum Ethereum.EVM", 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "Blockhash.lean"
+            path.write_text(rendered)
+            result = subprocess.run(["lake", "env", "lean", str(path)],
+                                    cwd=Path(__file__).resolve().parent.parent,
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_unrelated_sequences_use_primitive_steps(self) -> None:
         rendered = units("60806040525f3560e01c")
         self.assertIn(".push1", rendered)
