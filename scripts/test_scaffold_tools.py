@@ -30,6 +30,20 @@ def tiny_runtime() -> bytes:
 
 
 class CreationBlocksTests(unittest.TestCase):
+    def test_scaffold_shares_conditional_prefixes_when_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "runtime.hex").write_text("5b6001506001505f35600057")
+            args = argparse.Namespace(dir=directory, contract="Sample", module="Sample",
+                                      namespace=None, prefix=None, max_summary_instructions=64,
+                                      shard_size=20, no_creation=True, share_branch_prefixes=True,
+                                      share_branch_pc=None)
+            self.assertEqual(scaffold.cmd_blocks(args), 0)
+            text = (directory / "RuntimeBlocks_001.lean").read_text()
+            self.assertIn("private def sample_block_0_shared", text)
+            self.assertIn("sample_block_0_taken", text)
+            self.assertIn("sample_block_0_fallthrough", text)
+
     def test_scaffold_omits_only_a_proven_runtime_suffix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
@@ -37,7 +51,8 @@ class CreationBlocksTests(unittest.TestCase):
             (directory / "runtime.hex").write_text(runtime.hex())
             args = argparse.Namespace(dir=directory, contract="Sample", module="Sample",
                                       namespace=None, prefix=None, max_summary_instructions=64,
-                                      shard_size=20, no_creation=False)
+                                      shard_size=20, no_creation=False, share_branch_prefixes=False,
+                                      share_branch_pc=None)
             safe = bytes.fromhex("5f6006575b005b00") + runtime
             (directory / "creation.hex").write_text(safe.hex())
             self.assertEqual(scaffold.cmd_blocks(args), 0)

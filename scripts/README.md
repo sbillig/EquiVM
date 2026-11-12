@@ -135,6 +135,11 @@ JSON object maps a full ABI signature to its Lean module and theorem, for exampl
 keeps its original statement and applies that fact; Lean checks the byte value and signature.
 Signatures absent from the map are still proved with `decide +kernel`.
 
+`scaffold.py blocks --share-branch-prefixes` can factor the common execution before paired
+conditional branches. Sharing is limited to eligible branches in the same shard; guarded,
+state-changing, patched-code and short prefixes stay separate. Pass `--share-branch-pc N`
+repeatedly to restrict this to blocks whose two branch summaries are retained after pruning.
+
 ## Conventions the generators follow
 
 - Transition order is the `SpecSyntax.lean` function order; the translator writes them in selector

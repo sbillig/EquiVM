@@ -311,6 +311,50 @@ class GeneratorTests(unittest.TestCase):
             for shard in shards:
                 self.assertIn(shard.name + ":", index)
 
+    def test_branch_prefix_sharing_keeps_summary_names_and_shards(self) -> None:
+        code = bytes.fromhex("5b6001506001505f35600057")
+        records = rd.generate_unit_records(code, "sample", "sampleCode", keep_metadata=True,
+                                           prepare_branch_prefixes=True)
+        self.assertEqual(len(records), 2)
+        names = [unit.theorem_names for unit in records]
+        shared = rd.share_branch_units(records)
+        self.assertEqual([unit.theorem_names for unit in shared], names)
+        self.assertEqual(sum(unit.text.count("private def sample_block_0_shared") for unit in shared), 1)
+        self.assertTrue(all("sample_block_0_shared hstack h" in unit.text for unit in shared))
+        self.assertLess(sum(unit.text.count("native_decide") for unit in shared),
+                        sum(unit.text.count("native_decide") for unit in records))
+        self.assertEqual(rd.share_branch_units(records, {99}), records)
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "Blocks.lean"
+            shards = rd.write_outputs(output, "sample", ["Sample.Bytecode"], records, 1,
+                                      share_branch_prefixes=True)
+            self.assertEqual(len(shards), 2)
+            self.assertTrue(all("sample_block_0_shared" not in f.read_text() for f in shards))
+            index = output.with_suffix(".index").read_text()
+            self.assertTrue(all(name in index for unit in records for name in unit.theorem_names))
+
+    def test_branch_prefix_creation_and_static_controls(self) -> None:
+        code = bytes.fromhex("5b6001506001505f35600057")
+        records = rd.generate_unit_records(code, "sample", "sampleCode", keep_metadata=True,
+                                           creation_code=True, prepare_branch_prefixes=True)
+        shared = rd.share_branch_units(records)
+        self.assertIn("(hcreationCodeSize : sampleCode.size = 12)", shared[0].text)
+        self.assertTrue(all("sample_block_0_shared hstack hcreationCodeSize h" in u.text
+                            for u in shared))
+        store = bytes.fromhex("5b60006000556000506000600057")
+        static = rd.generate_unit_records(store, "sample", "sampleCode", keep_metadata=True,
+                                          prepare_branch_prefixes=True)
+        self.assertTrue(all(unit.branch_prefix is None for unit in static))
+        # JUMPI consumes a pre-existing condition, so the prefix has a different stack input.
+        different_stack = bytes.fromhex("5b600150600150600050600057")
+        mismatch = rd.generate_unit_records(different_stack, "sample", "sampleCode",
+                                           keep_metadata=True, prepare_branch_prefixes=True)
+        self.assertTrue(all(unit.branch_prefix is None for unit in mismatch))
+        patched = rd.generate_unit_records(code, "sample", "sampleCode", keep_metadata=True,
+                                           immutable_sites={}, layout_term="Sample.layout",
+                                           prepare_branch_prefixes=True)
+        self.assertTrue(all(unit.branch_prefix is None for unit in patched))
+
     def test_contract_variants_can_share_summary_prefix(self) -> None:
         records = rd.generate_unit_records(bytes.fromhex("5b5b"), "sample", "sampleCode",
                                            keep_metadata=True)

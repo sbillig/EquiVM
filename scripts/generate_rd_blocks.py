@@ -26,6 +26,10 @@ bytecode; if it is an exact suffix and control flow cannot enter it, summaries
 are generated only for the constructor.  Unresolved jumps and uncertain
 instruction boundaries retain summaries for the entire creation bytecode.
 
+``--share-branch-prefixes`` factors eligible taken/fallthrough prefixes within
+one output shard. ``--share-branch-pc`` can restrict sharing to selected blocks.
+Prefixes containing state changes, extra guards, or patched code remain separate.
+
 For runtime immutables, pass an imported Lean layout with
 ``--layout-term MyContract.immutableLayout`` and ``--import MyContract.Immutables``.
 The generator evaluates that layout's sites through Lean and checks that they
@@ -434,10 +438,19 @@ def summary_name(prefix: str, block: list[Instruction], branch: str | None) -> s
 
 
 @dataclass(frozen=True)
+class BranchPrefix:
+    pc: int
+    name: str
+    declaration: str
+    shared_text: str
+
+
+@dataclass(frozen=True)
 class GeneratedUnit:
     text: str
     theorem_names: tuple[str, ...] = ()
     pcs: tuple[int, ...] = ()
+    branch_prefix: BranchPrefix | None = None
 
 
 @dataclass(frozen=True)
@@ -1008,13 +1021,9 @@ def simulate(block: list[Instruction], branch: str | None,
                    f"r{rno}", codecopies, mloads, word_writes, return_window)
 
 
-def render_summary(prefix: str, code_term: str, block: list[Instruction], summary: Summary,
-                   creation_code: bool = False,
-                   creation_code_size: int | None = None,
-                   immutable_sites: dict[int, tuple[int, str]] | None = None,
-                   layout_term: str | None = None,
-                   runtime_suffix: bool = False) -> str:
-    name = summary_name(prefix, block, summary.branch)
+def summary_signature(code_term: str, block: list[Instruction], summary: Summary,
+                      creation_code: bool, immutable_sites: dict[int, tuple[int, str]] | None,
+                      layout_term: str | None, runtime_suffix: bool) -> tuple[str, str, list[str]]:
     xs = " ".join(summary.stack_in)
     xbinder = f" {{{xs} : UInt256}}" if xs else ""
     tail_param = "{tail : ByteArray} " if creation_code else ""
@@ -1039,12 +1048,23 @@ def render_summary(prefix: str, code_term: str, block: list[Instruction], summar
         f"({name} : {term.replace('__CODE__', effective_code_term).replace('__TEMPLATE__', code_term)})"
         for name, term in summary.extra_hypotheses
     )
-
     input_rd = (
         f"RD {effective_code_term} ee g s0 {u256_nat(block[0].pc)} {stack_term(summary.stack_in)} "
         f"mem aw rdata σ k C"
     )
     assumptions.append(f"(h : {input_rd})")
+    return params, effective_code_term, assumptions
+
+
+def render_summary(prefix: str, code_term: str, block: list[Instruction], summary: Summary,
+                   creation_code: bool = False,
+                   creation_code_size: int | None = None,
+                   immutable_sites: dict[int, tuple[int, str]] | None = None,
+                   layout_term: str | None = None,
+                   runtime_suffix: bool = False) -> str:
+    name = summary_name(prefix, block, summary.branch)
+    params, effective_code_term, assumptions = summary_signature(
+        code_term, block, summary, creation_code, immutable_sites, layout_term, runtime_suffix)
 
     final_defs: FinalValueDefs | None = None
     if summary.terminal:
@@ -1111,6 +1131,49 @@ def render_summary(prefix: str, code_term: str, block: list[Instruction], summar
                                   final_defs)
         )
     return "\n".join(lines)
+
+
+def make_branch_prefix(prefix: str, code_term: str, block: list[Instruction],
+                       summary: Summary, rendered: str, decode_proof: str,
+                       creation_prefix: str | None, creation_code_size: int | None,
+                       immutable_sites: dict[int, tuple[int, str]] | None,
+                       layout_term: str | None, runtime_suffix: bool) -> BranchPrefix | None:
+    """Prepare a shared prefix only when it has the same inputs and no extra guards."""
+    if (summary.branch is None or len(block) < 7 or immutable_sites is not None or runtime_suffix
+            or any(ins.opcode in {0x55, 0x5D, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4} for ins in block[:-1])):
+        return None
+    before = simulate(block[:-1], None, decode_proof, creation_prefix, immutable_sites, runtime_suffix)
+    if (before.extra_hypotheses or before.existential_counters or before.terminal
+            or before.stack_in != summary.stack_in
+            or before.max_stack_prefix != summary.max_stack_prefix
+            or len(before.proof) != len(block) - 1 or before.proof != summary.proof[:-1]):
+        return None
+    creation = creation_prefix is not None
+    params, code, assumptions = summary_signature(code_term, block[:-1], before, creation,
+                                                   immutable_sites, layout_term, runtime_suffix)
+    name = f"{prefix}_block_{block[0].pc}_shared"
+    size_proof = (f"  have hcreationCodeSize : {code_term}.size = {creation_code_size} := by native_decide"
+                  if creation else None)
+    def named(line: str) -> str:
+        return (line.replace("__CODE__", code).replace("__TEMPLATE__", code_term)
+                .replace("__LAYOUT__", layout_term or ""))
+    steps = ["  let r0 := h", *(named(step) for step in before.proof)]
+    common = [steps[0], *([size_proof] if size_proof else []), *steps[1:]]
+    size_hyp = (f"    (hcreationCodeSize : {code_term}.size = {creation_code_size})"
+                if creation else None)
+    declaration = "\n".join([f"/- Shared branch prefix at pc {block[0].pc}. -/",
+                              f"private def {name} {params}",
+                              *(f"    {a}" for a in assumptions[:-1]),
+                              *([size_hyp] if size_hyp else []),
+                              f"    {assumptions[-1]} := by", *steps,
+                              f"  exact {before.last_cursor}"])
+    old = "\n".join(common)
+    call_args = "hstack hcreationCodeSize h" if creation else "hstack h"
+    replacement = "\n".join([*([size_proof] if size_proof else []),
+                               f"  have {before.last_cursor} := {name} {call_args}"])
+    if old not in rendered:
+        return None
+    return BranchPrefix(block[0].pc, name, declaration, rendered.replace(old, replacement, 1))
 
 
 def render_packed_summary(base_name: str, params: str, assumptions: list[str],
@@ -1449,7 +1512,8 @@ def generate_unit_records(code: bytes, prefix: str, code_term: str,
                           vyper_scalar_slots: dict[int, str] | None = None,
                           vyper_layout_term: str | None = None,
                           vyper_suffix_size: int | None = None,
-                          creation_runtime: bytes | None = None) -> list[GeneratedUnit]:
+                          creation_runtime: bytes | None = None,
+                          prepare_branch_prefixes: bool = False) -> list[GeneratedUnit]:
     """Generate theorem/comment units with index metadata and no module wrapper."""
     if runtime_suffix and (creation_code or immutable_sites is not None or layout_term is not None):
         raise ValueError("runtime suffix and other patch modes are separate")
@@ -1519,6 +1583,10 @@ def generate_unit_records(code: bytes, prefix: str, code_term: str,
                     rendered,
                     theorem_names,
                     pcs,
+                    make_branch_prefix(prefix, code_term, piece, summary, rendered, decode_proof,
+                                       creation_prefix, len(code) if creation_code else None,
+                                       immutable_sites, layout_term, runtime_suffix)
+                    if prepare_branch_prefixes and not scalar_copy and suffix_return is None else None,
                 ))
     return units
 
@@ -1803,6 +1871,29 @@ def shard_units(units: list[Unit], shard_size: int) -> list[list[Unit]]:
     return shards
 
 
+def share_branch_units(units: list[Unit], pcs: set[int] | None = None) -> list[Unit]:
+    """Share adjacent branch prefixes without moving declarations across shards."""
+    result: list[Unit] = []
+    index = 0
+    while index < len(units):
+        first = units[index]
+        second = units[index + 1] if index + 1 < len(units) else None
+        if isinstance(first, GeneratedUnit) and isinstance(second, GeneratedUnit):
+            a, b = first.branch_prefix, second.branch_prefix
+            if (a is not None and b is not None and a.name == b.name
+                    and first.theorem_names and second.theorem_names
+                    and first.theorem_names[0].endswith("_taken")
+                    and second.theorem_names[0].endswith("_fallthrough")
+                    and a.declaration == b.declaration and (pcs is None or a.pc in pcs)):
+                result.extend([replace(first, text=a.declaration + "\n\n" + a.shared_text),
+                               replace(second, text=b.shared_text)])
+                index += 2
+                continue
+        result.append(first)
+        index += 1
+    return result
+
+
 def write_outputs(output: Path, prefix: str, imports: list[str], units: list[Unit],
                   shard_size: int | None, creation_code: bool = False,
                   code_term: str | None = None,
@@ -1812,9 +1903,13 @@ def write_outputs(output: Path, prefix: str, imports: list[str], units: list[Uni
                   layout_term: str | None = None,
                   runtime_suffix: bool = False,
                   max_rec_depth: int | None = None,
-                  namespace: str | None = None) -> list[Path]:
+                  namespace: str | None = None,
+                  share_branch_prefixes: bool = False,
+                  shared_branch_pcs: set[int] | None = None) -> list[Path]:
     index_entries: list[IndexEntry] = []
     if shard_size is None:
+        if share_branch_prefixes:
+            units = share_branch_units(units, shared_branch_pcs)
         module_text = render_module(prefix, imports, units, creation_code,
                                     code_term, immutable_sites, code, layout_term,
                                     runtime_suffix, max_rec_depth, namespace)
@@ -1830,6 +1925,8 @@ def write_outputs(output: Path, prefix: str, imports: list[str], units: list[Uni
     suffix = output.suffix or ".lean"
     paths: list[Path] = []
     for index, shard in enumerate(shards, 1):
+        if share_branch_prefixes:
+            shard = share_branch_units(shard, shared_branch_pcs)
         path = output.with_name(f"{output.stem}_{index:0{width}d}{suffix}")
         module_text = render_module(prefix, imports, shard, creation_code,
                                     code_term, immutable_sites, code, layout_term,
@@ -1862,6 +1959,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="sidecar theorem index path (default: OUTPUT with .index suffix)")
     parser.add_argument("--shard-size", type=int,
                         help="maximum summary theorems per output file")
+    parser.add_argument("--share-branch-prefixes", action="store_true",
+                        help="share eligible prefixes of paired conditional branches")
+    parser.add_argument("--share-branch-pc", type=int, action="append",
+                        help="restrict shared prefixes to these block PCs (repeatable)")
     parser.add_argument("--fail-on-unsupported", action="store_true",
                         help="reject bytecode containing an instruction without a generator rule")
     parser.add_argument("--allow-unsupported", action="store_true", help=argparse.SUPPRESS)
@@ -1888,6 +1989,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--creation-runtime requires --creation-code")
     if args.runtime_suffix and args.layout_term is not None:
         parser.error("--runtime-suffix and --layout-term are separate modes")
+    if args.share_branch_pc and not args.share_branch_prefixes:
+        parser.error("--share-branch-pc requires --share-branch-prefixes")
     try:
         code = (parse_bytecode_text(args.hex_bytecode) if args.hex_bytecode is not None
                 else read_bytecode(args.bytecode, args.code_term))
@@ -1901,11 +2004,14 @@ def main(argv: list[str] | None = None) -> int:
                                       args.creation_code, immutable_sites,
                                       layout_term, args.runtime_suffix,
                                       creation_runtime=(read_bytecode(args.creation_runtime)
-                                                        if args.creation_runtime else None))
+                                                        if args.creation_runtime else None),
+                                      prepare_branch_prefixes=args.share_branch_prefixes)
         paths = write_outputs(args.output, args.name, imports, units,
                               args.shard_size, args.creation_code, args.code_term,
                               args.index_output, immutable_sites, code,
-                              layout_term, args.runtime_suffix, namespace=args.namespace)
+                              layout_term, args.runtime_suffix, namespace=args.namespace,
+                              share_branch_prefixes=args.share_branch_prefixes,
+                              shared_branch_pcs=set(args.share_branch_pc) if args.share_branch_pc else None)
     except (OSError, ValueError) as error:
         parser.error(str(error))
     if args.shard_size is not None:

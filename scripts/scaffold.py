@@ -1021,23 +1021,29 @@ def cmd_blocks(args: argparse.Namespace) -> int:
     vyper_slots = ({len(runtime) + slot["offset"]: slot["name"]
                     for slot in build["immutables"] if slot["length"] == 32}
                    if runtime_suffix else None)
+    shared_pcs = set(args.share_branch_pc) if args.share_branch_pc else None
     units = rd.generate_unit_records(runtime, prefix, f"{namespace}.{prefix}Bytecode", False, False,
                                      args.max_summary_instructions, False, sites, layout_term, runtime_suffix,
                                      vyper_slots,
                                      f"{namespace}.immutableLayout" if runtime_suffix else None,
-                                     build["immutableSuffixSize"] if runtime_suffix else None)
+                                     build["immutableSuffixSize"] if runtime_suffix else None,
+                                     prepare_branch_prefixes=args.share_branch_prefixes)
     paths = rd.write_outputs(directory / "RuntimeBlocks.lean", prefix, imports, units, args.shard_size,
                              False, f"{namespace}.{prefix}Bytecode", None, sites, runtime, layout_term,
-                             runtime_suffix)
+                             runtime_suffix, share_branch_prefixes=args.share_branch_prefixes,
+                             shared_branch_pcs=shared_pcs)
     print(f"wrote {len(paths)} runtime summary shards ({len(units)} units) and RuntimeBlocks.index")
     creation_path = directory / "creation.hex"
     if creation_path.exists() and not args.no_creation:
         creation = read_bytecode(creation_path)
         units = rd.generate_unit_records(creation, f"{prefix}Creation", f"{namespace}.{prefix}CreationBytecode",
                                          False, False, args.max_summary_instructions, True, None, None, False,
-                                         creation_runtime=runtime if runtime and creation.endswith(runtime) else None)
+                                         creation_runtime=runtime if runtime and creation.endswith(runtime) else None,
+                                         prepare_branch_prefixes=args.share_branch_prefixes)
         paths = rd.write_outputs(directory / "CreationBlocks.lean", f"{prefix}Creation", [bytecode_import],
-                                 units, args.shard_size, True, f"{namespace}.{prefix}CreationBytecode")
+                                 units, args.shard_size, True, f"{namespace}.{prefix}CreationBytecode",
+                                 share_branch_prefixes=args.share_branch_prefixes,
+                                 shared_branch_pcs=shared_pcs)
         print(f"wrote {len(paths)} creation summary shards ({len(units)} units) and CreationBlocks.index")
     return 0
 
@@ -1200,6 +1206,10 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--shard-size", type=int, default=20)
         p.add_argument("--max-summary-instructions", type=int, default=rd.MAX_SUMMARY_INSTRUCTIONS)
         p.add_argument("--no-creation", action="store_true")
+        p.add_argument("--share-branch-prefixes", action="store_true",
+                       help="share eligible prefixes of conditional branch summaries")
+        p.add_argument("--share-branch-pc", type=int, action="append",
+                       help="limit sharing to these block PCs (repeatable)")
 
     p = sub.add_parser("compile", help="run solc and write the artifacts"); common(p); compile_args(p)
     p = sub.add_parser("lean", help="write Bytecode/Selectors/Immutables modules"); common(p); lean_args(p)
@@ -1208,6 +1218,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("difftest", help="write DiffTarget.lean and the suite registry"); common(p); lean_args(p); difftest_args(p)
     p = sub.add_parser("all", help="compile, lean, difftest, blocks, check"); common(p); compile_args(p); lean_args(p); difftest_args(p); blocks_args(p)
     args = parser.parse_args(argv)
+    if getattr(args, "share_branch_pc", None) and not args.share_branch_prefixes:
+        parser.error("--share-branch-pc requires --share-branch-prefixes")
     if hasattr(args, "sources_root") and args.sources_root is None:
         args.sources_root = "contracts" if (args.dir / "contracts").exists() else "."
     if args.command == "compile":
