@@ -253,6 +253,12 @@ class GeneratorTests(unittest.TestCase):
             with self.subTest(options=options):
                 records = rd.generate_unit_records(code, "sample", "sampleCode", **options)
                 self.assertTrue(any(5 in unit.pcs for unit in records))
+        # The tail can also return to a prefix JUMPDEST that falls through.
+        prefix = bytes.fromhex("6009565b")
+        metadata = bytes.fromhex("a100000003")
+        code = prefix + metadata
+        self.assertEqual(rd.strip_solidity_metadata(code), prefix)
+        self.assertEqual(rd.strip_solidity_metadata(code, allow_appended_tail=True), code)
 
     def test_copy_is_not_split_by_small_bound(self) -> None:
         rendered = units("3d5f5f3e", max_summary_instructions=2)
