@@ -129,6 +129,12 @@ for a complete Vyper proof and `Examples/VyperImmutable` for the immutable suffi
 | `finish_check.py` | report | Build, differential suite on the contract (`--difftest-count`, `--skip-difftest`), `sorry`/`admit`/`axiom` grep, `#print axioms` against the accepted trusted base. |
 | `check_all_benchmark_blocks.py` | report | Check that benchmark block summaries compile, excluding temporary contracts under `Benchmarks/Scaffolds/`. CI selects `UniswapV3/Pool`. |
 
+`scaffold.py lean --selector-facts facts.json` can reuse previously proved selector hashes. The
+JSON object maps a full ABI signature to its Lean module and theorem, for example
+`{"get()": {"module": "Shared.Hashes", "theorem": "Shared.getFact"}}`. The generated theorem
+keeps its original statement and applies that fact; Lean checks the byte value and signature.
+Signatures absent from the map are still proved with `decide +kernel`.
+
 ## Conventions the generators follow
 
 - Transition order is the `SpecSyntax.lean` function order; the translator writes them in selector

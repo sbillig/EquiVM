@@ -123,6 +123,32 @@ class SelectorTests(unittest.TestCase):
         self.assertEqual(scaffold.lean_selector_table(text), table)
         self.assertIn("theorem aSelectorFact", text)
 
+    def test_selector_facts_share_only_matching_signatures(self) -> None:
+        table = [("a()", bytes.fromhex("01020304")), ("b()", bytes.fromhex("01020304"))]
+        facts = {"a()": ("Shared.Hashes", "Shared.aFact"),
+                 "other()": ("Unused.Hashes", "Unused.fact")}
+        text = scaffold.render_selectors_lean("N", "x", "X", table, facts)
+        self.assertIn("import Shared.Hashes\n", text)
+        self.assertNotIn("import Unused.Hashes", text)
+        self.assertIn('(Ethereum.KEC (String.toByteArray "a()")).extract 0 4 = xSelBytes 0 := by\n'
+                      '  exact Shared.aFact', text)
+        self.assertIn('(Ethereum.KEC (String.toByteArray "b()")).extract 0 4 = xSelBytes 1 := by\n'
+                      '  decide +kernel', text)
+        self.assertEqual(scaffold.lean_selector_table(text), table)
+
+    def test_selector_fact_manifest_rejects_invalid_names(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "facts.json"
+            path.write_text('{"a()": {"module": "Shared.Hashes", "theorem": "Shared.aFact"}}')
+            self.assertEqual(scaffold.load_selector_facts(path),
+                             {"a()": ("Shared.Hashes", "Shared.aFact")})
+            for content in ('[]', '{"a()": {"module": "Shared", "theorem": "bad name"}}',
+                            '{"a()": {"module": "Shared"}}'):
+                with self.subTest(content=content):
+                    path.write_text(content)
+                    with self.assertRaises(ValueError):
+                        scaffold.load_selector_facts(path)
+
 
 class DiffTargetTests(unittest.TestCase):
     def test_render_plain_and_immutable(self) -> None:
