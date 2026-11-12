@@ -152,6 +152,12 @@ Signatures absent from the map are still proved with `decide +kernel`.
 conditional branches. Sharing is limited to eligible branches in the same shard; guarded,
 state-changing, patched-code and short prefixes stay separate. Pass `--share-branch-pc N`
 repeatedly to restrict this to blocks whose two branch summaries are retained after pruning.
+The shared prefix is a private definition with its intermediate `RD` type inferred. The
+simulator renders normalized counters, while an intermediate cursor has nested counters and can
+contain symbolic memory-expansion costs; an explicitly typed theorem can therefore require PC
+and counter normalization. In an affected ERC20 shard, the explicit theorem also increased
+profiled elaboration and cumulative type-checking work, although wall times overlapped. The
+public branch summaries remain theorems with explicit statements.
 
 ## Conventions the generators follow
 
