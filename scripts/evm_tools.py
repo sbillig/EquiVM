@@ -53,13 +53,15 @@ def jump_dests(code: bytes) -> list[int]:
 
 def metadata_immutable_sites(build: dict | None, code: bytes) -> set[int] | None:
     """Return runtime patch offsets, or None when a solc layout is incomplete."""
-    if not build:
+    if build is None:
         return set()
     compiler = build.get("compiler", {})
     if not isinstance(compiler, dict):
         return None
     if compiler.get("kind") == "vyper":
         return set()  # Vyper appends immutables rather than patching the template.
+    if "immutables" not in build and "immutableReferences" not in build:
+        return None
     immutables = build.get("immutables", [])
     refs = build.get("immutableReferences", {})
     if not isinstance(immutables, list) or not isinstance(refs, dict):

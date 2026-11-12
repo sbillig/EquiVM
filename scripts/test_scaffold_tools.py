@@ -140,6 +140,20 @@ class DispatcherTests(unittest.TestCase):
             report = bytecode_report.render(path, "Sample", build, None, False)
         self.assertIn("37: JUMPDEST", report)
 
+    def test_missing_immutable_layout_keeps_metadata(self) -> None:
+        code = bytes.fromhex("7f" + "00" * 32 + "5600a1005b0000000000000000000b")
+        build = {"compiler": {"kind": "solc", "version": "0.8.0"},
+                 "main": "Sample.sol", "settings": {}}
+        self.assertIsNone(et.metadata_immutable_sites(build, code))
+        self.assertIsNone(et.metadata_immutable_sites({}, code))
+        self.assertEqual(et.metadata_immutable_sites(None, code), set())
+        self.assertEqual(et.metadata_immutable_sites({**build, "immutables": []}, code), set())
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "runtime.hex").write_text(code.hex())
+            report = bytecode_report.render(path, "Sample", build, None, False)
+        self.assertIn("37: JUMPDEST", report)
+
     def test_stepper_inventory_keeps_code_without_patch_layout(self) -> None:
         code = bytes.fromhex("00a0ef0002")
         self.assertEqual(rd.strip_solidity_metadata(code), bytes.fromhex("00"))
