@@ -49,7 +49,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Iterable
+from typing import Collection, Iterable
 
 from bytecode_io import parse_bytecode_text, read_bytecode
 
@@ -211,7 +211,7 @@ def disassemble(code: bytes) -> list[Instruction]:
 
 
 def suffix_is_unreachable(code: bytes, boundary: int,
-                          immutable_sites: dict[int, tuple[int, str]] | None = None) -> bool:
+                          immutable_sites: Collection[int] | None = None) -> bool:
     """Conservatively check that execution at pc 0 cannot enter the suffix.
 
     Every jump in the prefix must immediately follow a constant PUSH targeting
@@ -278,7 +278,7 @@ def blocks(instructions: list[Instruction]) -> list[list[Instruction]]:
 
 
 def strip_solidity_metadata(code: bytes,
-                            immutable_sites: dict[int, tuple[int, str]] | None = None) -> bytes:
+                            immutable_sites: Collection[int] | None = None) -> bytes:
     """Remove an unreachable length-suffixed solc CBOR metadata map.
 
     The full byte array is still emitted/referenced in theorem statements and decode proofs.

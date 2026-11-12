@@ -12,8 +12,10 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Collection
 
-from generate_rd_blocks import Instruction, blocks, disassemble, strip_solidity_metadata
+from generate_rd_blocks import (Instruction, blocks, disassemble, strip_solidity_metadata,
+                                validate_immutable_sites)
 
 PUSH1, PUSH32 = 0x60, 0x7F
 JUMPDEST, JUMP, JUMPI = 0x5B, 0x56, 0x57
@@ -49,9 +51,57 @@ def jump_dests(code: bytes) -> list[int]:
     return out
 
 
-def split_metadata(code: bytes) -> tuple[bytes, bytes]:
+def metadata_immutable_sites(build: dict | None, code: bytes) -> set[int] | None:
+    """Return runtime patch offsets, or None when a solc layout is incomplete."""
+    if not build:
+        return set()
+    compiler = build.get("compiler", {})
+    if not isinstance(compiler, dict):
+        return None
+    if compiler.get("kind") == "vyper":
+        return set()  # Vyper appends immutables rather than patching the template.
+    immutables = build.get("immutables", [])
+    refs = build.get("immutableReferences", {})
+    if not isinstance(immutables, list) or not isinstance(refs, dict):
+        return None
+    offsets: set[int] = set()
+    for immutable in immutables:
+        sites = immutable.get("offsets") if isinstance(immutable, dict) else None
+        if not isinstance(sites, list) or not sites:
+            return None
+        if any(type(off) is not int or off < 1 for off in sites):
+            return None
+        offsets.update(sites)
+    raw_sites = []
+    for key, sites in refs.items():
+        if not isinstance(sites, list) or not sites:
+            return None
+        for site in sites:
+            off = site.get("start") if isinstance(site, dict) else None
+            width = site.get("length") if isinstance(site, dict) else None
+            if type(off) is not int or off < 1 or type(width) is not int:
+                return None
+            raw_sites.append({"offset": off, "length": width, "key": str(key)})
+    if not raw_sites and offsets:
+        for immutable in immutables:
+            widths = immutable.get("lengths")
+            key = immutable.get("name")
+            if not isinstance(widths, list) or len(widths) != 1 or not isinstance(key, str) or not key:
+                return None
+            raw_sites.extend({"offset": off, "length": widths[0], "key": key}
+                             for off in immutable["offsets"])
+    if offsets - {site["offset"] for site in raw_sites}:
+        return None
+    try:
+        return set(validate_immutable_sites(raw_sites, code))
+    except ValueError:
+        return None
+
+
+def split_metadata(code: bytes, immutable_sites: Collection[int] | None = None,
+                   keep_metadata: bool = False) -> tuple[bytes, bytes]:
     """(executable prefix, trailing solc CBOR metadata); metadata is empty when absent."""
-    body = strip_solidity_metadata(code)
+    body = code if keep_metadata else strip_solidity_metadata(code, immutable_sites)
     return body, code[len(body):]
 
 
@@ -357,8 +407,9 @@ def overload_names(signatures: list[str]) -> dict[str, str]:
     return names
 
 
-def code_and_blocks(code: bytes, keep_metadata: bool = False):
-    body = code if keep_metadata else strip_solidity_metadata(code)
+def code_and_blocks(code: bytes, keep_metadata: bool = False,
+                    immutable_sites: Collection[int] | None = None):
+    body = code if keep_metadata else strip_solidity_metadata(code, immutable_sites)
     instructions = disassemble(body)
     return body, instructions, blocks(instructions)
 

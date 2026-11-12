@@ -41,7 +41,7 @@ def main():
         if is_creation:
             # The remainder is data copied by CODECOPY, not constructor instructions.
             units = [u for u in units if u.pcs and max(u.pcs) < runtime_offset]
-        analyzed = code[:runtime_offset] if is_creation else blocks.strip_solidity_metadata(code)
+        analyzed = code[:runtime_offset] if is_creation else blocks.strip_solidity_metadata(code, sites)
         covered = {pc for unit in units for pc in unit.pcs}
         missing = [i for i in blocks.disassemble(analyzed) if i.pc not in covered]
         if any(i.opcode != 0xf1 or is_creation for i in missing):

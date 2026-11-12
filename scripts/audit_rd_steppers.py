@@ -104,8 +104,8 @@ def generator_gaps() -> dict[str, tuple[int, int]]:
     artifacts: dict[str, set[str]] = defaultdict(set)
     cases = corpus.discover([ROOT / "Examples", ROOT / "Benchmarks"])
     for case in cases:
-        code = generator.strip_solidity_metadata(case.code)
-        for ins in generator.disassemble(code):
+        # The corpus may contain templates whose runtime patch sites are unknown here.
+        for ins in generator.disassemble(case.code):
             if not generator.instruction_is_supported(ins):
                 label = ins.name.upper()
                 counts[label] += 1

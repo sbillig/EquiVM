@@ -473,7 +473,7 @@ class Dispatcher:
 
     def __init__(self, c: Contract, immutable_sites: dict | None) -> None:
         self.c = c
-        body = rd.strip_solidity_metadata(c.runtime)
+        body = rd.strip_solidity_metadata(c.runtime, immutable_sites)
         self.instructions = rd.disassemble(body)
         self.pieces: list[Piece] = []
         for block in rd.blocks(self.instructions):
@@ -1772,14 +1772,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # dispatcher arms from the bytecode
     from evm_tools import dispatcher as recover_dispatcher
-    body = rd.strip_solidity_metadata(c.runtime)
-    disp = recover_dispatcher(rd.disassemble(body))
-    arms = {a.selector: a.target for a in disp.arms}
     sites = None
     if c.immutables:
         build = load_json(find_build(c.directory, c.name))
         from scaffold import immutable_sites
         sites = immutable_sites(build, c.runtime)
+    body = rd.strip_solidity_metadata(c.runtime, sites)
+    disp = recover_dispatcher(rd.disassemble(body))
+    arms = {a.selector: a.target for a in disp.arms}
 
     if want("Spec"):
         write_file(c.directory / "Spec.lean", render_spec(c), args.force)

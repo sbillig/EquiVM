@@ -7,6 +7,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import generate_rd_blocks as rd  # noqa: E402
@@ -64,6 +66,33 @@ class PathTests(unittest.TestCase):
 
 
 class ImmutableTests(unittest.TestCase):
+    def test_patched_jump_keeps_metadata_in_dispatcher_and_recovery(self) -> None:
+        # An immutable PUSH32 is zero in the template but may target pc 37 at runtime.
+        prefix = bytes.fromhex("7f" + "00" * 32 + "5600")
+        code = prefix + bytes.fromhex("a1005b0000000000000000000b")
+        sites = {1: (32, "target")}
+        target = len(prefix) + 2
+        c = ps.Contract(Path("."), "Sample", "Sample", "Sample", "sample", [], False,
+                        False, [ps.Immutable("target", "uint256")], (0, 8, 0), [], code)
+        patched = code[:1] + target.to_bytes(32, "big") + code[33:]
+        self.assertIn(target, ps.jump_dests(patched))
+        self.assertNotIn(target, ps.Dispatcher(c, None).by_pc)
+        self.assertIn(target, ps.Dispatcher(c, sites).by_pc)
+        records = rd.generate_unit_records(code, "sample", "sampleCode", immutable_sites=sites,
+                                           layout_term="Sample.layout")
+        self.assertTrue(any(target in unit.pcs for unit in records))
+
+        with (patch.object(ps, "load_contract", return_value=c),
+              patch.object(ps, "find_build", return_value=Path("Sample.build.json")),
+              patch.object(ps, "load_json", return_value={}),
+              patch("scaffold.immutable_sites", return_value=sites),
+              patch("evm_tools.dispatcher", return_value=SimpleNamespace(arms=[])) as recovery,
+              patch.object(ps, "render_spec", return_value=""),
+              patch.object(ps, "render_dispatch", return_value=("", {"global_guard": False})),
+              patch.object(ps, "write_file")):
+            self.assertEqual(ps.main(["--dir", ".", "--module", "Sample", "--only", "Spec"]), 0)
+        self.assertIn(target, [ins.pc for ins in recovery.call_args.args[0]])
+
     def test_jump_table_lemma_in_summary_form(self) -> None:
         c = fake_contract(ROOT / "Examples/TinyImmutable", "TinyImmutable", "tinyImmutable")
         c.immutables = [ps.Immutable("owner", "address"), ps.Immutable("scale", "uint256")]

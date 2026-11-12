@@ -9,7 +9,10 @@ import unittest
 import shutil
 import argparse
 import json
+import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import evm_tools as et  # noqa: E402
@@ -88,6 +91,51 @@ class DispatcherTests(unittest.TestCase):
         self.assertEqual(counts.get("REVERT"), 4)  # callvalue, short calldata, no match, require
         self.assertEqual(counts.get("RETURN"), 1)
         self.assertNotIn("SLOAD", counts)
+
+    def test_reports_keep_metadata_reachable_by_patched_jump(self) -> None:
+        prefix = bytes.fromhex("7f" + "00" * 32 + "5600")
+        code = prefix + bytes.fromhex("a1005b0000000000000000000b")
+        build = {"compiler": {"kind": "solc", "version": "0.8.0"}, "main": "Sample.sol",
+                 "settings": {}, "immutables": [{"id": 1, "name": "target", "offsets": [1]}],
+                 "immutableReferences": {"1": [{"start": 1, "length": 32}]}}
+        sites = et.metadata_immutable_sites(build, code)
+        self.assertEqual(sites, {1})
+        self.assertEqual(et.split_metadata(code)[0], prefix)
+        self.assertEqual(et.split_metadata(code, sites)[0], code)
+        lean = scaffold.render_bytecode_lean("Sample", "sample", "Sample", code, None, build, 512)
+        self.assertIn(f"Runtime: {len(code)} bytes ({len(code)} executable, 0 metadata)", lean)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "runtime.hex").write_text(code.hex())
+            report = bytecode_report.render(path, "Sample", build, None, False)
+        self.assertIn("37: JUMPDEST", report)
+
+    def test_incomplete_immutable_layout_keeps_metadata(self) -> None:
+        code = bytes.fromhex("7f" + "00" * 32 + "5600a1005b0000000000000000000b")
+        build = {"compiler": {"kind": "solc", "version": "0.8.0"}, "main": "Sample.sol",
+                 "settings": {}, "immutables": [{"name": "target"}]}
+        self.assertIsNone(et.metadata_immutable_sites(build, code))
+        partial = {"compiler": {"kind": "solc"}, "immutables": [],
+                   "immutableReferences": {"1": [{"start": 2, "length": 20}]}}
+        self.assertIsNone(et.metadata_immutable_sites(partial, code))
+        # An incomplete layout is not evidence that an apparent constant jump stays constant.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "runtime.hex").write_text(code.hex())
+            report = bytecode_report.render(path, "Sample", build, None, False)
+        self.assertIn("37: JUMPDEST", report)
+
+    def test_stepper_inventory_keeps_code_without_patch_layout(self) -> None:
+        code = bytes.fromhex("00a0ef0002")
+        self.assertEqual(rd.strip_solidity_metadata(code), bytes.fromhex("00"))
+        corpus = SimpleNamespace(discover=lambda _: [SimpleNamespace(code=code, label="sample")])
+        with patch.dict(sys.modules, {"audit_rd_sequences": SimpleNamespace(),
+                                      "check_rd_blocks_corpus": corpus}):
+            spec = importlib.util.spec_from_file_location("stepper_inventory_test",
+                                                          ROOT / "scripts/audit_rd_steppers.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.assertEqual(module.generator_gaps()["UNSUPPORTED_EF"], (1, 1))
 
 
 class SelectorTests(unittest.TestCase):

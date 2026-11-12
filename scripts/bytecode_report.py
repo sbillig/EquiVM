@@ -23,7 +23,8 @@ from pathlib import Path
 from bytecode_io import read_bytecode
 from evm_tools import (AstFunction, Dispatcher, SourceMapEntry, ast_functions, census,
                        code_and_blocks, decode_source_map, dispatcher, function_pcs,
-                       innermost_function, jump_dests, load_build, method_names, parse_src,
+                       innermost_function, jump_dests, load_build, metadata_immutable_sites,
+                       method_names, parse_src,
                        routine_boundaries, selector, split_metadata, abi_signatures)
 from evm_tools import walk as walk_nodes
 from generate_rd_blocks import Instruction
@@ -128,8 +129,10 @@ def render(directory: Path, name: str, build: dict | None, abi: list[dict] | Non
     runtime = read_bytecode(directory / "runtime.hex")
     creation_path = directory / "creation.hex"
     creation = read_bytecode(creation_path) if creation_path.exists() else None
-    body, instructions, bblocks = code_and_blocks(runtime)
-    _, metadata = split_metadata(runtime)
+    sites = metadata_immutable_sites(build, runtime)
+    body, instructions, bblocks = code_and_blocks(runtime, keep_metadata=sites is None,
+                                                   immutable_sites=sites)
+    _, metadata = split_metadata(runtime, sites, keep_metadata=sites is None)
     index_of = {ins.pc: k for k, ins in enumerate(instructions)}
 
     out.append(f"# {name} bytecode report")
