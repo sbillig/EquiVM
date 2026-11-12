@@ -249,6 +249,57 @@ def suffix_is_unreachable(code: bytes, boundary: int,
     return True
 
 
+def metadata_suffix_is_unreachable(code: bytes, boundary: int,
+                                   immutable_sites: Collection[int] | None = None,
+                                   allow_appended_tail: bool = False) -> bool:
+    """Overapproximate execution before a candidate metadata suffix.
+
+    A dynamic or patched jump may land at any JUMPDEST in the full linear sweep.
+    A jump immediately after an unpatched PUSH has that constant target: JUMP
+    itself cannot be a jump destination, so the PUSH must have been executed.
+    With an arbitrary appended tail, a constant target outside the template can
+    return to any template JUMPDEST. Unknown patch layouts must be handled by
+    retaining metadata; None here means that no patches are modeled. Known
+    fallthrough instructions such as CALL are safe to follow even when the
+    block generator has no RD step for them.
+    """
+    instructions = disassemble(code)
+    by_pc = {ins.pc: ins for ins in instructions}
+    previous = {ins.pc: instructions[i - 1] for i, ins in enumerate(instructions) if i}
+    jumpdests = {ins.pc for ins in instructions if ins.opcode == 0x5B}
+    pending = [0]
+    reached: set[int] = set()
+    while pending:
+        pc = pending.pop()
+        if pc in reached:
+            continue
+        reached.add(pc)
+        if pc >= boundary:
+            return False
+        ins = by_pc.get(pc)
+        if ins is None or not ins.complete or ins.name.startswith("unsupported_"):
+            return False
+        if ins.opcode in {0x56, 0x57}:
+            prev = previous.get(pc)
+            if prev and prev.opcode == 0x5F:
+                target = 0
+            elif (prev and 0x60 <= prev.opcode <= 0x7F and prev.complete
+                  and (immutable_sites is None or prev.pc + 1 not in immutable_sites)):
+                target = prev.argument
+            else:
+                target = None
+            if target is None or (allow_appended_tail and target >= len(code)):
+                pending.extend(jumpdests - reached)
+            elif target in jumpdests:
+                pending.append(target)
+        if ins.opcode not in {0x00, 0x56, 0xF3, 0xFD, 0xFE, 0xFF}:
+            next_pc = pc + ins.size
+            if next_pc >= boundary:
+                return False
+            pending.append(next_pc)
+    return True
+
+
 def creation_constructor_code(code: bytes, runtime: bytes) -> bytes:
     """Omit an embedded runtime only when the constructor cannot reach it."""
     if not runtime or not code.endswith(runtime):
@@ -282,7 +333,8 @@ def blocks(instructions: list[Instruction]) -> list[list[Instruction]]:
 
 
 def strip_solidity_metadata(code: bytes,
-                            immutable_sites: Collection[int] | None = None) -> bytes:
+                            immutable_sites: Collection[int] | None = None,
+                            allow_appended_tail: bool = False) -> bytes:
     """Remove an unreachable length-suffixed solc CBOR metadata map.
 
     The full byte array is still emitted/referenced in theorem statements and decode proofs.
@@ -294,7 +346,8 @@ def strip_solidity_metadata(code: bytes,
     if start < 0 or start >= len(code) - 2:
         return code
     # CBOR major type 5 (map), including the indefinite-length map marker.
-    if code[start] & 0xE0 != 0xA0 or not suffix_is_unreachable(code, start, immutable_sites):
+    if code[start] & 0xE0 != 0xA0 or not metadata_suffix_is_unreachable(
+            code, start, immutable_sites, allow_appended_tail):
         return code
     return code[:start]
 
@@ -1527,7 +1580,8 @@ def generate_unit_records(code: bytes, prefix: str, code_term: str,
     prefix = lean_ident(prefix)
     analyzed_code = (creation_constructor_code(code, creation_runtime)
                      if creation_runtime is not None else
-                     code if keep_metadata else strip_solidity_metadata(code, immutable_sites))
+                     code if keep_metadata else strip_solidity_metadata(
+                         code, immutable_sites, allow_appended_tail=creation_code or runtime_suffix))
     discovered_blocks = blocks(disassemble(analyzed_code))
     unsupported = [
         ins for block in discovered_blocks for ins in block if not instruction_is_supported(ins)

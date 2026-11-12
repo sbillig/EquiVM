@@ -216,6 +216,44 @@ class GeneratorTests(unittest.TestCase):
                                            immutable_sites=sites, layout_term="layout")
         self.assertTrue(any(len(prefix) + 2 in unit.pcs for unit in records))
 
+    def test_dynamic_jumps_strip_metadata_without_jumpdest(self) -> None:
+        prefix = bytes.fromhex("5f355600")
+        metadata = bytes.fromhex("a111220003")
+        code = prefix + metadata
+        self.assertEqual(rd.strip_solidity_metadata(code), prefix)
+        # Treating a PUSH as patched is harmless when the suffix has no JUMPDEST.
+        push = bytes.fromhex("7f" + "00" * 32 + "5600")
+        self.assertEqual(rd.strip_solidity_metadata(push + metadata, {1}), push)
+        # CALL is not a generated RD step, but its fallthrough is known.
+        call = bytes.fromhex("f100")
+        self.assertEqual(rd.strip_solidity_metadata(call + metadata), call)
+        # A 0x5b inside PUSH data is not a destination of the linear sweep.
+        push_data = bytes.fromhex("a1605b0003")
+        self.assertEqual(rd.strip_solidity_metadata(prefix + push_data), prefix)
+
+    def test_metadata_closure_keeps_reachable_boundaries(self) -> None:
+        metadata = bytes.fromhex("a15b000003")
+        for prefix in ("5f355600", "5f600057", "ef00"):
+            with self.subTest(prefix=prefix):
+                code = bytes.fromhex(prefix) + metadata
+                self.assertEqual(rd.strip_solidity_metadata(code), code)
+        # An unreachable PUSH straddles the metadata boundary.
+        prefix = bytes.fromhex("0061")
+        self.assertEqual(rd.strip_solidity_metadata(prefix + metadata), prefix)
+
+    def test_creation_metadata_accounts_for_appended_tail(self) -> None:
+        # A constant jump to the tail can return to the suffix's JUMPDEST.
+        prefix = bytes.fromhex("60095600")
+        metadata = bytes.fromhex("a15b000003")
+        code = prefix + metadata
+        self.assertEqual(len(code), 9)
+        self.assertEqual(rd.strip_solidity_metadata(code), prefix)
+        self.assertEqual(rd.strip_solidity_metadata(code, allow_appended_tail=True), code)
+        for options in ({"creation_code": True}, {"runtime_suffix": True}):
+            with self.subTest(options=options):
+                records = rd.generate_unit_records(code, "sample", "sampleCode", **options)
+                self.assertTrue(any(5 in unit.pcs for unit in records))
+
     def test_copy_is_not_split_by_small_bound(self) -> None:
         rendered = units("3d5f5f3e", max_summary_instructions=2)
         self.assertEqual(1, rendered.count("/-- Automatically generated RD summary"))
