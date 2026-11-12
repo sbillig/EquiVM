@@ -182,6 +182,40 @@ class GeneratorTests(unittest.TestCase):
         rendered = units("7f01")
         self.assertIn("Unsupported instruction boundary at pc 0: push32", rendered)
 
+    def test_reachable_metadata_jumpdest_gets_a_summary(self) -> None:
+        # CALLDATALOAD supplies 6 to JUMP; pc 6 is inside a CBOR-shaped suffix.
+        code = bytes.fromhex("5f355600a1005b0000000000000000000b")
+        self.assertEqual([ins.pc for ins in rd.disassemble(code) if ins.opcode == 0x5B], [6])
+        for creation in (False, True):
+            with self.subTest(creation=creation):
+                records = rd.generate_unit_records(code, "sample", "sampleCode",
+                                                   creation_code=creation)
+                self.assertTrue(any(6 in unit.pcs for unit in records))
+
+    def test_metadata_is_removed_only_when_control_flow_stays_in_prefix(self) -> None:
+        metadata = bytes.fromhex("a1005b0000000000000000000b")
+        safe = ("00", "600456005b00")
+        for prefix in safe:
+            with self.subTest(prefix=prefix):
+                code = bytes.fromhex(prefix) + metadata
+                self.assertEqual(rd.strip_solidity_metadata(code), bytes.fromhex(prefix))
+        uncertain = ("5f355600", "60065600", "5b5f600057", "5b", "61ab", "ef00")
+        for prefix in uncertain:
+            with self.subTest(prefix=prefix):
+                code = bytes.fromhex(prefix) + metadata
+                self.assertEqual(rd.strip_solidity_metadata(code), code)
+
+    def test_patched_jump_target_keeps_metadata(self) -> None:
+        prefix = bytes.fromhex("7f" + "00" * 32 + "5600")
+        metadata = bytes.fromhex("a1005b0000000000000000000b")
+        code = prefix + metadata
+        sites = {1: (32, "target")}
+        self.assertEqual(rd.strip_solidity_metadata(code), prefix)
+        self.assertEqual(rd.strip_solidity_metadata(code, sites), code)
+        records = rd.generate_unit_records(code, "sample", "sampleCode",
+                                           immutable_sites=sites, layout_term="layout")
+        self.assertTrue(any(len(prefix) + 2 in unit.pcs for unit in records))
+
     def test_copy_is_not_split_by_small_bound(self) -> None:
         rendered = units("3d5f5f3e", max_summary_instructions=2)
         self.assertEqual(1, rendered.count("/-- Automatically generated RD summary"))

@@ -207,6 +207,41 @@ def disassemble(code: bytes) -> list[Instruction]:
     return out
 
 
+def suffix_is_unreachable(code: bytes, boundary: int,
+                          immutable_sites: dict[int, tuple[int, str]] | None = None) -> bool:
+    """Conservatively check that execution at pc 0 cannot enter the suffix.
+
+    Every jump in the prefix must immediately follow a constant PUSH targeting
+    the prefix, and the prefix must end in a halt or such a jump. JUMP and JUMPI
+    cannot themselves be jump destinations, so their preceding PUSH must run.
+    Unknown instructions, dynamic or patched jumps, and a PUSH crossing the
+    boundary are inconclusive, including with arbitrary appended data.
+    """
+    instructions = [ins for ins in disassemble(code) if ins.pc < boundary]
+    if not instructions or instructions[-1].pc + instructions[-1].size != boundary:
+        return False
+    if instructions[-1].opcode not in {0x00, 0x56, 0xF3, 0xFD, 0xFE, 0xFF}:
+        return False
+    for index, ins in enumerate(instructions):
+        if not ins.complete or ins.name.startswith("unsupported_"):
+            return False
+        if ins.opcode in {0x56, 0x57}:
+            if index == 0:
+                return False
+            prev = instructions[index - 1]
+            if immutable_sites is not None and prev.pc + 1 in immutable_sites:
+                return False
+            if prev.opcode == 0x5F:
+                target = 0
+            elif 0x60 <= prev.opcode <= 0x7F and prev.complete:
+                target = prev.argument
+            else:
+                return False
+            if target is None or target >= boundary:
+                return False
+    return True
+
+
 def blocks(instructions: list[Instruction]) -> list[list[Instruction]]:
     if not instructions:
         return []
@@ -231,8 +266,9 @@ def blocks(instructions: list[Instruction]) -> list[list[Instruction]]:
     return result
 
 
-def strip_solidity_metadata(code: bytes) -> bytes:
-    """Remove a standard length-suffixed solc CBOR metadata map for block discovery.
+def strip_solidity_metadata(code: bytes,
+                            immutable_sites: dict[int, tuple[int, str]] | None = None) -> bytes:
+    """Remove an unreachable length-suffixed solc CBOR metadata map.
 
     The full byte array is still emitted/referenced in theorem statements and decode proofs.
     """
@@ -243,7 +279,7 @@ def strip_solidity_metadata(code: bytes) -> bytes:
     if start < 0 or start >= len(code) - 2:
         return code
     # CBOR major type 5 (map), including the indefinite-length map marker.
-    if code[start] & 0xE0 != 0xA0:
+    if code[start] & 0xE0 != 0xA0 or not suffix_is_unreachable(code, start, immutable_sites):
         return code
     return code[:start]
 
@@ -1411,7 +1447,7 @@ def generate_unit_records(code: bytes, prefix: str, code_term: str,
             not runtime_suffix or not vyper_layout_term):
         raise ValueError("Vyper immutable mode requires a runtime suffix and layout term")
     prefix = lean_ident(prefix)
-    analyzed_code = code if keep_metadata else strip_solidity_metadata(code)
+    analyzed_code = code if keep_metadata else strip_solidity_metadata(code, immutable_sites)
     discovered_blocks = blocks(disassemble(analyzed_code))
     unsupported = [
         ins for block in discovered_blocks for ins in block if not instruction_is_supported(ins)
