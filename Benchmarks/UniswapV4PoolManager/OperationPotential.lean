@@ -93,6 +93,11 @@ theorem step_compbit_potential {gasCost : Nat} {op : Operation.CBLOp}
     (h : step gasCost (.CompBit op, arg) s = .ok s') :
     operationPotential s' ≤ operationPotential s := by
   cases op <;> rw [step.eq_1] at h
+  case CLZ =>
+    simp only at h
+    split at h
+    · simpa only [operationPotential] using Nat.le_of_eq (execUnOp_potential h)
+    · contradiction
   all_goals first
   | simpa only [operationPotential] using execBinOp_potential h
   | simpa only [operationPotential] using Nat.le_of_eq (execUnOp_potential h)
