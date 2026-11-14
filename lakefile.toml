@@ -44,7 +44,7 @@ root = "Tests.DiffTest.Main"
 # name = "equivm"
 # root = "EquiVM"
 
+# Local wiring: EVMLean's `clz` branch, to be replaced by a pinned revision.
 [[require]]
 name = "evmlean"
-git = "https://github.com/lefterislazar/EVMLean.git"
-rev = "main"
+path = "../EVMLean-clz"
