@@ -72,6 +72,13 @@ class GeneratorTests(unittest.TestCase):
         self.assertIn("RD.genMcopy", rendered)
         self.assertIn("mcopyExpansionCost aw", rendered)
 
+    def test_osaka_clz(self) -> None:
+        rendered = units("60011e")
+        self.assertIn(".clz hfork", rendered)
+        self.assertIn("UInt256.clz", rendered)
+        self.assertIn("(hfork : ee.header.fork = .Osaka)", rendered)
+        self.assertNotIn("Unsupported instruction boundary", rendered)
+
     def test_immutable_mode_uses_deployed_code_and_symbolic_push(self) -> None:
         code = bytes([0x7F, *([0] * 32), 0x56])
         sites = rd.validate_immutable_sites(

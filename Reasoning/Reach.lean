@@ -1389,6 +1389,36 @@ theorem RD.not {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
       · exact hee
       · exact hσ₀
 
+/-- **CLZ**: the leading zero bits of the top word, `256` for zero (EIP-7939; cost `Glow = 5`,
+    pc += 1).  An Osaka opcode: the block's fork must be Osaka. -/
+theorem RD.clz {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
+    {pc : UInt256} {mem : ByteArray} {aw : UInt256} {rdata : ByteArray}
+    {acc : AccountMap} {k C : ℕ}
+    {a : UInt256} {t : List UInt256}
+    (h : RD code ee g s0 pc (a :: t) mem aw rdata acc k C)
+    (hfork : ee.header.fork = .Osaka)
+    (hdec : decode code pc = some (.CLZ, .none)) (hov : t.length + 1 ≤ 1024) :
+    RD code ee g s0 (pc + ⟨1⟩) (UInt256.clz a :: t) mem aw rdata acc (k + 1) (C + 5) := by
+  unfold RD at h ⊢
+  rcases h with hoog | ⟨s, hX, hcode, hpc, hstk, hgas, hk, hC, hmem, haw, hrdata, hacc, hee, hσ₀⟩
+  · exact Or.inl hoog
+  · have st := clz_xstep hcode hpc (by rw [hee]; exact hfork) hdec hstk hov
+    by_cases gg : g.toNat < C + 5
+    · exact Or.inl (hX.trans (stepOOG hgas st hk hC (by omega)))
+    · refine Or.inr ⟨stBinop5 s (UInt256.clz a) t,
+        hX.trans (stepContinue hgas st hk (Nat.not_lt.mp gg)), ?_, ?_, ?_, ?_, by omega, by omega,
+        ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp only [stBinop5]; exact hcode
+      · simp only [stBinop5]; rw [hpc]
+      · rfl
+      · simp only [stBinop5]; rw [hgas, Sat256.subNat_sub_add_of_sub_sub]
+      · simp only [stBinop5]; exact hmem
+      · simp only [stBinop5]; exact haw
+      · simp only [stBinop5]; exact hrdata
+      · simp only [stBinop5]; exact hacc
+      · exact hee
+      · exact hσ₀
+
 /-! ### Environment-reading ops (read the carried `ee`) -/
 
 theorem RD.callvalue {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
