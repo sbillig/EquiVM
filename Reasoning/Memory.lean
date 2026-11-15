@@ -1222,7 +1222,7 @@ theorem twoWordHashMem_read0_64 {mem : ByteArray} (key slot : UInt256)
 theorem toByteArray_eq_toBytesBE (v : UInt256) :
     UInt256.toByteArray v = ⟨(EVM.Word.toBytesBE v).toArray⟩ := by
   have hb : (BE v.toNat).size ≤ 32 := by
-    apply BE_le; have := v.val.isLt; simp [UInt256.size, UInt256.toNat]
+    apply BE_le; exact v.val.isLt
   apply ByteArray.ext; apply Array.toList_inj.mp
   rw [show (((EVM.Word.toBytesBE v).toArray).toList) = EVM.Word.toBytesBE v from by simp]
   unfold UInt256.toByteArray EVM.Word.toBytesBE

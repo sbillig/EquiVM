@@ -211,13 +211,12 @@ theorem isZero_eq_zero_of_ne {a : UInt256} (h : a ≠ ⟨0⟩) : UInt256.isZero 
 /-- Equal `ByteArray`s under `==` have equal size. -/
 theorem byteArray_size_eq_of_beq {a b : ByteArray} (h : (a == b) = true) : a.size = b.size := by
   unfold ByteArray.size
-  refine congrArg Array.size (eq_of_beq ?_)
-  simpa [BEq.beq, ByteArray.instBEq] using h
+  exact congrArg Array.size (eq_of_beq (show (a.data == b.data) = true from h))
 
 /-- `ByteArray` `==` reflects equality. -/
 theorem byteArray_eq_of_beq {a b : ByteArray} (h : (a == b) = true) : a = b := by
   apply ByteArray.ext
-  exact eq_of_beq (by simpa [BEq.beq, ByteArray.instBEq] using h)
+  exact eq_of_beq (show (a.data == b.data) = true from h)
 
 /-- `1 ≠ 0` as `UInt256`. -/
 theorem one_ne_zero_uint : (⟨1⟩ : UInt256) ≠ ⟨0⟩ := by decide
@@ -267,6 +266,7 @@ theorem push1_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest : 
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_push1 s argv hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush1]
+  rfl
 
 /-! ### PUSH2 (cost 3, pc += 3) -/
 
@@ -289,6 +289,7 @@ theorem push2_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest : 
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_push2 s argv hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush2]
+  rfl
 
 /-! ### PUSH0 (cost 2, pc += 1, pushes 0) -/
 
@@ -311,6 +312,7 @@ theorem push0_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List 
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_push0 s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stPush0]
+  rfl
 
 /-! ### GAS (cost 2, pc += 1, pushes remaining gas) -/
 
@@ -333,6 +335,7 @@ theorem gas_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List UI
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_gas s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stGas]
+  rfl
 
 /-! ### CALLVALUE (cost 2, pc += 1, pushes weiValue) -/
 
@@ -355,6 +358,7 @@ theorem callvalue_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : L
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_callvalue s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stCallvalue]
+  rfl
 
 /-! ### TIMESTAMP (cost 2, pc += 1, pushes block timestamp) -/
 
@@ -377,6 +381,7 @@ theorem timestamp_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : L
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_timestamp s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stTimestamp]
+  rfl
 
 /-! ### NUMBER (cost 2, pc += 1, pushes block number) -/
 
@@ -399,6 +404,7 @@ theorem number_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_number s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stNumber]
+  rfl
 
 /-! ### PREVRANDAO (cost 2, pc += 1, pushes block prevrandao) -/
 
@@ -421,6 +427,7 @@ theorem prevrandao_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : 
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_prevrandao s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stPrevrandao]
+  rfl
 
 /-! ### GASLIMIT (cost 2, pc += 1, pushes block gaslimit) -/
 
@@ -443,6 +450,7 @@ theorem gaslimit_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Li
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_gaslimit s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stGaslimit]
+  rfl
 
 /-! ### CHAINID (cost 2, pc += 1, pushes the configured chain id) -/
 
@@ -465,6 +473,7 @@ theorem chainid_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Lis
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_chainid s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stChainid]
+  rfl
 
 /-! ### DUP1 (cost 3, pc += 1, duplicates top) -/
 
@@ -489,6 +498,7 @@ theorem basefee_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Lis
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_basefee s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stBasefee]
+  rfl
 
 /-! ### BLOCKHASH (cost `Gblockhash = 20`, pc += 1, pops a block number, pushes its hash) -/
 
@@ -587,6 +597,7 @@ theorem mstore_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Lis
   simp only [ite_eq_right hov']
   rw [collapse_two_stage]
   simp only [GasConstants.Gverylow, stMStore]
+  rfl
 
 /-! ### MSTORE8 (two-stage cost `memExp + 3`, pc += 1, pops 2) -/
 
@@ -615,6 +626,7 @@ theorem mstore8_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Li
   simp only [ite_eq_right hov']
   rw [collapse_two_stage]
   simp only [GasConstants.Gverylow, stMStore8]
+  rfl
 
 /-! ### JUMPI not-taken (condition `⟨0⟩` ⇒ no jump, cost 10, pc += 1, pops 2) -/
 
@@ -730,6 +742,7 @@ theorem mload_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List U
   simp only [ite_eq_right hov']
   rw [collapse_two_stage]
   simp only [GasConstants.Gverylow, stMLoad]
+  rfl
 
 /-! ### Binary ops (`a :: b :: t ↦ res :: t`, cost 3, pc += 1) -/
 
@@ -1047,6 +1060,7 @@ theorem exp_xstep {s : State} {code : ByteArray} {pcv a b : UInt256}
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by
     simp only [List.length_cons]; omega
   simp only [ite_eq_right hov', expGasCost, stExp]
+  rfl
 
 /-! ### POP (cost 2, pc += 1, drops top) -/
 
@@ -1088,6 +1102,7 @@ theorem calldatasize_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest 
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_calldatasize s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stCalldatasize]
+  rfl
 
 /-! ### CALLDATALOAD (cost 3, pc += 1, loads a 32-byte calldata word) -/
 
@@ -1130,6 +1145,7 @@ theorem push4_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest : 
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_push4 s argv hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush4]
+  rfl
 
 /-! ### PUSH20 (cost 3, pc += 21) -/
 
@@ -1151,6 +1167,7 @@ theorem push20_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest :
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_push s .PUSH20 argv 20 (by decide) hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush20]
+  rfl
 
 /-! ### JUMPDEST (cost 1, pc += 1) -/
 
@@ -1171,6 +1188,7 @@ theorem jumpdest_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hov' : ¬ (s.machineState.stack.length - 0 + 0 > 1024) := by omega
   rw [← hcode, step_jumpdest s hd, ite_eq_right hov']
   simp only [GasConstants.Gjumpdest, stJumpdest]
+  rfl
 
 /-! ### JUMP / JUMPI taken (need the valid-jump fact `(D_J code 0).contains target`) -/
 
@@ -1969,6 +1987,7 @@ theorem caller_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_caller s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stCaller]
+  rfl
 
 /-! ### ADDRESS (cost `Gbase = 2`, pc += 1, pushes current contract address) -/
 
@@ -1992,6 +2011,7 @@ theorem address_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_address s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stAddress]
+  rfl
 
 /-! ### EXTCODESIZE (dynamic `Caccess`, pc += 1) -/
 
@@ -2759,6 +2779,7 @@ theorem pushConst_xstep {s : State} {code : ByteArray} {pcv arg : UInt256} {widt
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
   rw [← hcode, step_push s op arg width hop hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPushConst]
+  rfl
 
 
 def stSelfbalance (s : State) : State :=
@@ -2800,7 +2821,6 @@ theorem xi_error_of_X_sat_local {σ σ₀ A I}
     (h : X (g.toNat + 1) (D_J I.code 0)
             (initState σ σ₀ g A I) = .error e) :
     Ξ σ σ₀ g.toUInt256 A I = .error e :=
-  Xi_error_of_X (g := g.toUInt256) (by
-    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using h)
+  Xi_error_of_X (g := g.toUInt256) h
 
 end Reasoning.Theory

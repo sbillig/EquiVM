@@ -1319,14 +1319,10 @@ theorem fin_uint256_mul_neg_one_val_low_contra {q art : UInt256}
 theorem u256_abs_high_toNat {w : UInt256}
     (hhi : 2 ^ 255 ≤ w.toNat) (hpos : 0 < w.toNat) :
     (UInt256.abs w).toNat = UInt256.size - w.toNat := by
-  cases w with
-  | mk val =>
-      change (UInt256.abs { val := val }).toNat = UInt256.size - val.val
-      unfold UInt256.abs
-      simp only [UInt256.toNat] at hhi hpos ⊢
-      rw [ite_eq_left hhi]
-      change (val * (-1 : Fin UInt256.size)).val = UInt256.size - val.val
-      exact fin_uint256_mul_neg_one_val (w := { val := val }) hpos
+  unfold UInt256.abs
+  rw [ite_eq_left hhi,
+    show ∀ x : Fin UInt256.size, (⟨x⟩ : UInt256).toNat = x.val from fun _ => rfl]
+  exact fin_uint256_mul_neg_one_val hpos
 
 theorem slt_zero_eq_zero_to_nonneg (w : UInt256)
     (h : UInt256.slt w ⟨0⟩ = ⟨0⟩) :
@@ -1384,10 +1380,10 @@ theorem u256_slt_zero_ne_zero_of_high {w : UInt256}
     (hhi : EVM.twoPow 255 ≤ w.toNat) : UInt256.slt w ⟨0⟩ ≠ ⟨0⟩ := by
   have hcond : w.val.val ≥ 2 ^ 255 := by
     simpa [EVM.twoPow, UInt256.toNat] using hhi
+  have hcond' : w.toNat ≥ 2 ^ 255 := hcond
+  have hzero : ¬ ((⟨0⟩ : UInt256).toNat ≥ 2 ^ 255) := by decide
   unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
-  simp only [UInt256.toNat]
-  rw [ite_eq_left hcond]
-  rw [ite_eq_right (by decide : ¬ ((0 : Fin UInt256.size).val ≥ 2 ^ 255))]
+  rw [ite_eq_left hcond', ite_eq_right hzero]
   decide
 
 theorem u256_abs_div_eq_bound_to_sign {rate prod art : UInt256} {rabs : Nat}
@@ -2166,8 +2162,7 @@ theorem u256_lor_one_ne_zero' (w : UInt256) :
   rw [u256_lor_toNat] at hval
   change Nat.lor 1 w.toNat % UInt256.size = 0 at hval
   have hlt : Nat.lor 1 w.toNat < UInt256.size := by
-    have hw : w.toNat < 2 ^ 256 := by
-      simp [UInt256.toNat, UInt256.size]
+    have hw : w.toNat < 2 ^ 256 := w.val.isLt
     simpa [UInt256.size] using Nat.or_lt_two_pow (by norm_num : 1 < 2 ^ 256) hw
   rw [Nat.mod_eq_of_lt hlt] at hval
   have hbitTrue : Nat.testBit (Nat.lor 1 w.toNat) 0 = true := by
@@ -2290,7 +2285,7 @@ theorem accountAddress_of_addressWord_toNat (beneficiaryAddress : AccountAddress
 theorem addressWord_canonical_of_address (beneficiaryAddress : AccountAddress) :
     (EVM.word beneficiaryAddress).toNat < EVM.addressModulus := by
   rw [addressWord_toNat_val]
-  simp [EVM.addressModulus, EVM.twoPow, AccountAddress.size]
+  exact beneficiaryAddress.isLt
 
 theorem uint256Word_of_nonneg_int_toNat (biddingTime : Int)
     (h0 : 0 ≤ biddingTime)
@@ -3157,10 +3152,8 @@ theorem accountAddress_ofNat_eq_zero_of_land_solcAddrMask_eq_zero {n : Nat}
     have hlandLt : Nat.land n (2 ^ 160 - 1) < UInt256.size := by
       exact lt_of_le_of_lt (nat_land_le_right n (2 ^ 160 - 1))
         (by decide : 2 ^ 160 - 1 < UInt256.size)
-    have hlandLt' :
-        Nat.land n 1461501637330902918203684832716283019655932542975 < UInt256.size := by
-      simpa using hlandLt
-    simpa [Nat.mod_eq_of_lt hlandLt'] using htoNat
+    rw [Nat.mod_eq_of_lt hlandLt] at htoNat
+    exact htoNat
   apply Fin.ext
   unfold AccountAddress.ofNat
   simp only [Fin.val_ofNat]
@@ -3180,7 +3173,7 @@ theorem accountAddress_ofNat_ne_zero_of_land_solcAddrMask_ne_zero {n : Nat}
   have hmod : n % 2 ^ 160 = 0 := by
     have hval := congrArg Fin.val haddr
     unfold AccountAddress.ofNat at hval
-    simpa [AccountAddress.size] using hval
+    exact hval
   rw [nat_land_mask_eq_mod, hmod]
   rfl
 

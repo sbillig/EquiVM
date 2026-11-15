@@ -198,7 +198,6 @@ theorem evalExpr_timestampModUint32 {cfg : Config} {stele : Frame} (evm : EVM.St
         ((2 : Int) ^ 32))) := by
   simp only [evalExpr?, envValue, EvalResult.bind, bind, pure, evalBinaryOp?]
   norm_num
-  intro _hbad
   have hnonneg :
       0 ≤ Int.ofNat (UInt256.ofNat evm.executionEnv.header.timestamp).toNat %
         (4294967296 : Int) := by
@@ -227,7 +226,8 @@ theorem internalCallTransitionReturn {cfg : Config} {caller : Frame} {evm callee
       (.returned calleeStele calleeEvm (some [value])) caller.immutables) :
     ExecStmt cfg caller evm (.internalCall name args retVar)
       (.ok { caller with locals := caller.locals.insert retVar value } calleeEvm) := by
-  simpa [TransitionDecl.toCallable, ExecTransitionBody, resumeAfterInternalCall] using
+  simpa [TransitionDecl.toCallable, ExecTransitionBody, resumeAfterInternalCall,
+    collapseReturns] using
     ExecStmt.internalCallReturn (cfg := cfg) (stele := caller) (evm := evm) (name := name)
       (args := args) (retVar := retVar) (argVals := argVals) (callee := callee.toCallable)
       (locals := locals) (calleeStele := calleeStele) (calleeEvm := calleeEvm)
@@ -1427,7 +1427,8 @@ theorem normalizeRawBoolWord_true_of_u256 {word : Nat}
     normalizeRawBoolWord? (rawBoolWordValue word) = .ok (.bool true) := by
   have hword1 : word = 1 := by
     have h := congrArg UInt256.toNat hone
-    simpa [hword] using h
+    rw [hword] at h
+    exact h
   subst word
   rfl
 

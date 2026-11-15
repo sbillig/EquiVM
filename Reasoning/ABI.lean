@@ -4467,10 +4467,11 @@ theorem decodeScalarWord_uint_result (bits : BitWidth) {bytes : List UInt8} {sta
     decodeABIWord?]
   rw [ite_eq_right (Nat.ne_of_gt bits.property.1)]
   by_cases hc : (ABI.bytesToWord ((bytes.drop start).take 32)).toNat < EVM.twoPow bits.val
-  · dsimp only [UInt256.toNat] at hc
-    simp only [UInt256.toNat, ite_eq_left hc]
-  · dsimp only [UInt256.toNat] at hc
-    simp only [UInt256.toNat, ite_eq_right hc]
+  · have hc' : (ABI.bytesToWord ((bytes.drop start).take 32)).val.val < EVM.twoPow bits.val := hc
+    simp only [ite_eq_left hc, ite_eq_left hc']
+    rfl
+  · have hc' : ¬ (ABI.bytesToWord ((bytes.drop start).take 32)).val.val < EVM.twoPow bits.val := hc
+    simp only [ite_eq_right hc, ite_eq_right hc']
 
 theorem decodeCalldata_uint_result (bits : BitWidth) {cd : ByteArray} {name : Ident}
     (hlen : 36 ≤ cd.size) (hhi : cd.size < 2 ^ 255 + 4) :

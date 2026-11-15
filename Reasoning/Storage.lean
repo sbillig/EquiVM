@@ -627,8 +627,7 @@ theorem packedAddressAfterBoolTrueNat_lt_size (old val : UInt256)
   have hq : old.toNat / 2 ^ 168 < 2 ^ 88 := by
     apply Nat.div_lt_of_lt_mul
     rw [show 2 ^ 168 * 2 ^ 88 = (2 : Nat) ^ 256 by rw [← Nat.pow_add]]
-    change old.val.val < 2 ^ 256
-    simp [UInt256.size]
+    exact old.val.isLt
   have hv : val.toNat < 2 ^ 160 := by
     simpa [EVM.addressModulus, EVM.twoPow] using hcanon
   have hvle : val.toNat ≤ 2 ^ 160 - 1 := Nat.le_pred_of_lt hv
@@ -678,8 +677,7 @@ theorem packedAddressAfterBoolTrueWord_eq (old val : UInt256)
   have hq : old.toNat / 2 ^ 168 < 2 ^ 88 := by
     apply Nat.div_lt_of_lt_mul
     rw [show 2 ^ 168 * 2 ^ 88 = (2 : Nat) ^ 256 by rw [← Nat.pow_add]]
-    change old.val.val < 2 ^ 256
-    simp [UInt256.size]
+    exact old.val.isLt
   have hv : val.toNat < 2 ^ 160 := by
     simpa [EVM.addressModulus, EVM.twoPow] using hcanon
   have hinnerlt :
@@ -1929,7 +1927,7 @@ theorem storageLocStore_uint8 (evm : EVM.State) (slot value : UInt256)
           (UInt256.land (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot)
             (UInt256.lnot ⟨255⟩)) value)) := by
   unfold storageLocStore storageLocWriteWord
-  simp only [valueToWord, wordOfInt_ofNat_toNat, bind, Option.bind]
+  simp only [valueToWord, wordOfInt_ofNat_toNat, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   change fromBytes' ((EVM.Word.toBytesLEWithSizeProof value).1.take 1 ++
@@ -1961,7 +1959,6 @@ theorem canonicalAddress_eq_zero_iff (value : UInt256)
   constructor
   · intro h
     have hv := congrArg (fun a => valueToWord (.address a)) h
-    dsimp only at hv
     rw [valueToWord_address_ofNat_canonical value hc] at hv
     exact Option.some.inj hv
   · intro h
@@ -1974,7 +1971,6 @@ theorem sourceAddress_eq_iff (I : ExecutionEnv) (w : UInt256)
   constructor
   · intro h
     have hw := congrArg (fun a => valueToWord (.address a)) h
-    dsimp only at hw
     rw [valueToWord_address_ofNat_canonical w hc] at hw
     exact Option.some.inj hw
   · intro h

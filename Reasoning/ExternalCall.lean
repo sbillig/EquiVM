@@ -528,7 +528,7 @@ theorem evalExpr_extCodeGuard_true {cfg : Config} {contract : ContractDecl} {evm
       0 < (UInt256.ofNat ((evm.lookupAccount target).option 0 (fun acc => acc.code.size))).toNat) :
     evalExpr? cfg { contract := contract, locals := locals } evm
       (.binary .gt (.extCodeSize receiver) (.intLit 0)) = .ok (.bool true) := by
-  simp [evalExpr?, EvalResult.bind, bind, hreceiver, evalBinaryOp?, EVM.Word.ofNat, hcode]
+  simp [evalExpr?, EvalResult.bind, bind, pure, hreceiver, evalBinaryOp?, EVM.Word.ofNat, hcode]
 
 theorem evalExpr_extCodeGuard_false {cfg : Config} {contract : ContractDecl} {evm : EVM.State}
     {locals : Store}
@@ -541,7 +541,7 @@ theorem evalExpr_extCodeGuard_false {cfg : Config} {contract : ContractDecl} {ev
         0) :
     evalExpr? cfg { contract := contract, locals := locals } evm
       (.binary .gt (.extCodeSize receiver) (.intLit 0)) = .ok (.bool false) := by
-  simp [evalExpr?, EvalResult.bind, bind, hreceiver, evalBinaryOp?, EVM.Word.ofNat, hcode]
+  simp [evalExpr?, EvalResult.bind, bind, pure, hreceiver, evalBinaryOp?, EVM.Word.ofNat, hcode]
 
 theorem evalExpr_codeGuard_of_accounts_eq {cfg : Config}
     {σ : AccountMap} {evm : EVM.State} {frame : Frame} {receiver : Expr}

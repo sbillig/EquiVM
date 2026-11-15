@@ -8225,8 +8225,7 @@ theorem addressValueTransport (a : AccountAddress) :
       (lt_of_lt_of_le a.isLt (show AccountAddress.size ≤ UInt256.size from by decide))
   have hcanon : (EVM.Word.ofNat a.toNat).toNat < EVM.addressModulus := by
     rw [hword]
-    change a.toNat < EVM.twoPow 160
-    simp [EVM.twoPow, AccountAddress.size]
+    exact a.isLt
   rw [solcAddrMask_clean hcanon, hword]
 
 theorem shortL1_size (v : UInt256) : (writeWord solcFreePtrMem 64 v).size = 96 := by

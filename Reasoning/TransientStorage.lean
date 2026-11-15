@@ -401,7 +401,7 @@ theorem transientLocStore_uint8 (evm : EVM.State) (slot value : UInt256)
           (UInt256.land (Stele.EVM.transientLoad evm evm.executionEnv.codeOwner slot)
             (UInt256.lnot ⟨255⟩)) value)) := by
   unfold transientLocStore storageLocWriteWord
-  simp only [valueToWord, wordOfInt_ofNat_toNat, bind, Option.bind]
+  simp only [valueToWord, wordOfInt_ofNat_toNat, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   change fromBytes' ((EVM.Word.toBytesLEWithSizeProof value).1.take 1 ++

@@ -179,7 +179,7 @@ theorem storageLocStore_uint48_offset0_word (evm : EVM.State) (slot data : UInt2
         (setUint48Offset0Word (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot)
           data)) := by
   unfold storageLocStore storageLocWriteWord packedUInt48Loc
-  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind]
+  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   show fromBytes'
@@ -340,7 +340,7 @@ theorem storageLocStore_uint48_offset6_word (evm : EVM.State) (slot data : UInt2
         (setUint48Offset6Word (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot)
           data)) := by
   unfold storageLocStore storageLocWriteWord packedUInt48Loc
-  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind]
+  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   show fromBytes'
@@ -395,7 +395,7 @@ theorem storageLocStore_addr_zero (evm : EVM.State) (slot : UInt256) :
         (setAddressOffset0Word (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot) ⟨0⟩)) :=
           by
   unfold storageLocStore storageLocWriteWord addressOffset0Loc
-  simp only [valueToWord, Reasoning.Theory.wordOfInt_zero, bind, Option.bind]
+  simp only [valueToWord, Reasoning.Theory.wordOfInt_zero, bind, Option.bind, Option.pure_def]
   have hvlen := (EVM.Word.toBytesLEWithSizeProof (⟨0⟩ : UInt256)).2
   congr 2
   apply u256_inj
@@ -694,7 +694,7 @@ theorem storageLocStore_uint48_offset20_zero (evm : EVM.State) (slot : UInt256) 
         (clearUint48Offset20Word
           (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot))) := by
   unfold storageLocStore storageLocWriteWord packedUInt48Loc
-  simp only [valueToWord, Reasoning.Theory.wordOfInt_zero, bind, Option.bind]
+  simp only [valueToWord, Reasoning.Theory.wordOfInt_zero, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   let old := Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot
@@ -743,7 +743,7 @@ theorem storageLocStore_uint48_offset26_zero (evm : EVM.State) (slot : UInt256) 
         (clearUint48Offset26Word
           (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot))) := by
   unfold storageLocStore storageLocWriteWord packedUInt48Loc
-  simp only [valueToWord, Reasoning.Theory.wordOfInt_zero, bind, Option.bind]
+  simp only [valueToWord, Reasoning.Theory.wordOfInt_zero, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   let old := Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot
@@ -793,7 +793,7 @@ theorem storageLocStore_uint48_offset26_word (evm : EVM.State) (slot data : UInt
         (setUint48Offset26Word
           (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot) data)) := by
   unfold storageLocStore storageLocWriteWord packedUInt48Loc
-  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind]
+  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   let old := Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot
@@ -846,7 +846,7 @@ theorem storageLocStore_uint48_offset20_word (evm : EVM.State) (slot data : UInt
         (setUint48Offset20Word
           (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot) data)) := by
   unfold storageLocStore storageLocWriteWord packedUInt48Loc
-  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind]
+  simp only [valueToWord, wordOfInt_emod_uint48, bind, Option.bind, Option.pure_def]
   congr 2
   apply u256_inj
   let old := Stele.EVM.storageLoad evm evm.executionEnv.codeOwner slot
