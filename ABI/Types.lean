@@ -2,10 +2,10 @@
 
 namespace ABI
 
-def BitWidth := { m : Nat // 0 < m ∧ m ≤ 256 ∧ m % 8 = 0}
+@[reducible] def BitWidth := { m : Nat // 0 < m ∧ m ≤ 256 ∧ m % 8 = 0}
   deriving DecidableEq, Repr
 
-def FinPos N := { n : Nat // 0 < n ∧ n ≤ N }
+@[reducible] def FinPos N := { n : Nat // 0 < n ∧ n ≤ N }
   deriving DecidableEq, Repr
 
 /-- Integer types used by Solidity-style ABI values. -/
