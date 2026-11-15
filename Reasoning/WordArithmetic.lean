@@ -1979,7 +1979,7 @@ theorem signedAddWrap (old wad : UInt256) (wadInt : Int)
     exact old.val.isLt
   have hold :
       (Int.ofNat old.toNat) % (Int.ofNat EVM.wordModulus) = Int.ofNat old.toNat :=
-    Int.emod_eq_of_lt (Int.ofNat_nonneg _) (Int.ofNat_lt.mpr holdLt)
+    Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr holdLt)
   have hsumNat : (old.toNat + wad.toNat) % EVM.wordModulus = (wad + old).toNat := by
     rw [show EVM.wordModulus = UInt256.size by rfl]
     rw [uadd_toNat, Nat.add_comm]
