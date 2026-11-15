@@ -763,7 +763,7 @@ theorem toExecute_ecrecover_precompile (σ : AccountMap) :
   have hmem : AccountAddress.ofUInt256 (⟨1⟩ : UInt256) ∈ π := by
     unfold π
     decide
-  rw [if_pos hmem]
+  rw [ite_eq_left hmem]
 
 theorem ecrecover_output_size (σ : AccountMap) (g : UInt256) (A : Substate)
     (I : ExecutionEnv) :

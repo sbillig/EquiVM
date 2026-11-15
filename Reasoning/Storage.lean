@@ -46,7 +46,7 @@ theorem storage_getD_insert_ne (storage : Storage) (readSlot writeSlot val defau
   have hcmp : compare writeSlot readSlot ≠ .eq := by
     intro hcmp
     exact hne (Std.LawfulEqCmp.eq_of_compare hcmp).symm
-  rw [Std.ExtTreeMap.getD_insert, if_neg hcmp]
+  rw [Std.ExtTreeMap.getD_insert, ite_eq_right hcmp]
 
 theorem keyValueToWord_address_of_canonical (w : UInt256)
     (hcanon : w.toNat < EVM.addressModulus) :
@@ -860,7 +860,7 @@ theorem storage_getD_erase_ne (storage : Storage) (readSlot writeSlot default : 
   have hcmp : compare writeSlot readSlot ≠ .eq := by
     intro hcmp
     exact hne (Std.LawfulEqCmp.eq_of_compare hcmp).symm
-  rw [Std.ExtTreeMap.getD_erase, if_neg hcmp]
+  rw [Std.ExtTreeMap.getD_erase, ite_eq_right hcmp]
 
 /-- Updating a storage slot with EVM/Solidity semantics preserves lookup at a different slot.
     Nonzero writes insert; zero writes erase. -/
@@ -881,7 +881,7 @@ theorem storage_get?_insert_ne (storage : Storage) (readSlot writeSlot val : UIn
   have hcmp : compare writeSlot readSlot ≠ .eq := by
     intro h
     exact hne (Std.LawfulEqCmp.eq_of_compare h).symm
-  rw [if_neg hcmp]
+  rw [ite_eq_right hcmp]
 
 theorem storage_get?_erase_ne (storage : Storage) (readSlot writeSlot : UInt256)
     (hne : readSlot ≠ writeSlot) :
@@ -891,7 +891,7 @@ theorem storage_get?_erase_ne (storage : Storage) (readSlot writeSlot : UInt256)
   have hcmp : compare writeSlot readSlot ≠ .eq := by
     intro h
     exact hne (Std.LawfulEqCmp.eq_of_compare h).symm
-  rw [if_neg hcmp]
+  rw [ite_eq_right hcmp]
 
 /-- Updating a storage slot with EVM/Solidity semantics preserves `get?` at a different slot.
     Nonzero writes insert; zero writes erase. -/
@@ -939,11 +939,11 @@ theorem storage_getD_update_insert_self (storage : Storage)
   · subst readSlot
     simp
   · by_cases hzero : val1 = (default : UInt256)
-    · simp only [hzero, if_true]
+    · simp only [hzero, ite_true]
       rw [storage_getD_insert_ne (storage.erase writeSlot) readSlot writeSlot val2 default hread]
       rw [storage_getD_insert_ne storage readSlot writeSlot val2 default hread]
       rw [storage_getD_erase_ne storage readSlot writeSlot default hread]
-    · simp only [hzero, if_false]
+    · simp only [hzero, ite_false]
       rw [extTreeMap_insert_insert_self]
 
 /-- `get?` after an arbitrary zero-aware storage update followed by a same-slot nonzero insert is
@@ -957,11 +957,11 @@ theorem storage_get?_update_insert_self (storage : Storage)
   · subst readSlot
     simp
   · by_cases hzero : val1 = (default : UInt256)
-    · simp only [hzero, if_true]
+    · simp only [hzero, ite_true]
       rw [storage_get?_insert_ne (storage.erase writeSlot) readSlot writeSlot val2 hread]
       rw [storage_get?_insert_ne storage readSlot writeSlot val2 hread]
       rw [storage_get?_erase_ne storage readSlot writeSlot hread]
-    · simp only [hzero, if_false]
+    · simp only [hzero, ite_false]
       exact extTreeMap_get?_insert_insert_self storage writeSlot readSlot val1 val2
 
 /-- Inserting one account preserves lookup at a different address. -/
@@ -973,7 +973,7 @@ theorem accountMap_get?_insert_ne (σ : AccountMap) (read write : AccountAddress
   have hcmp : compare write read ≠ .eq := by
     intro hcmp
     exact hne (Std.LawfulEqCmp.eq_of_compare hcmp).symm
-  rw [if_neg hcmp]
+  rw [ite_eq_right hcmp]
 
 /-- A zero-aware `SSTORE` to one storage slot preserves an observable read from a different slot
     of the same account. -/
@@ -1780,10 +1780,10 @@ theorem storage_update_erase_self (storage : Storage) (slot val : UInt256) :
   · subst read
     simp [Std.ExtTreeMap.get?_eq_getElem?]
   · by_cases hzero : val = (default : UInt256)
-    · simp only [hzero, if_true]
+    · simp only [hzero, ite_true]
       rw [storage_get?_erase_ne (storage.erase slot) read slot hread,
         storage_get?_erase_ne storage read slot hread]
-    · simp only [hzero, if_false]
+    · simp only [hzero, ite_false]
       rw [storage_get?_erase_ne (storage.insert slot val) read slot hread,
         storage_get?_insert_ne storage read slot val hread,
         storage_get?_erase_ne storage read slot hread]

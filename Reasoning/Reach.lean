@@ -3409,8 +3409,8 @@ theorem RD.call {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
     have hgtF : ∀ y : UInt256, (({val := 0} : UInt256) > y) = False := fun y => eq_false (Fin.not_lt_zero _)
     have hdeqF : (s.executionEnv.depth == 1024) = false := by
       rw [beq_eq_false_iff_ne]; intro hh; rw [hh] at hdepth'; exact absurd hdepth' (by decide)
-    simp only [List.length_cons, hovF, hstaticF, if_false, hdepthLt, hbal, hgtF, hdeqF,
-      and_true, if_true, Bool.or_false] at st
+    simp only [List.length_cons, hovF, hstaticF, ite_false, hdepthLt, hbal, hgtF, hdeqF,
+      and_true, ite_true, Bool.or_false] at st
     rw [collapse_two_stage, hcode] at st
     -- st : Xstep (D_J code 0) s = if (gas < memCost+gasCost) then OOG else .ok (SUCC, none)
     -- Step the cursor with `X_peel`, then `split` on the (unnamed) gas guard so SUCC stays concrete.
@@ -3668,8 +3668,8 @@ theorem RD.callValueMadeOr {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {
         exact Nat.not_lt_of_ge hLeNat hGtNat)
     have hdeqF : (s.executionEnv.depth == 1024) = false := by
       rw [beq_eq_false_iff_ne]; intro hh; rw [hh] at hdepth'; exact absurd hdepth' (by decide)
-    simp only [List.length_cons, hovF, hstaticF, if_false, hdepthLt, hbalOpt, hgtF, hdeqF,
-      and_true, if_true, Bool.or_false] at st
+    simp only [List.length_cons, hovF, hstaticF, ite_false, hdepthLt, hbalOpt, hgtF, hdeqF,
+      and_true, ite_true, Bool.or_false] at st
     rw [collapse_two_stage, hcode] at st
     have hfuel : g.toNat + 1 - k = (g.toNat - k) + 1 := by omega
     have hXP := hX.trans (hfuel.symm ▸ X_peel (f := g.toNat - k) st)
@@ -4003,7 +4003,7 @@ theorem RD.callValueInsufficientBalanceOr {code : ByteArray} {ee : ExecutionEnv}
       intro hh
       rw [hh] at hdepth'
       exact absurd hdepth' (by decide)
-    simp only [List.length_cons, hovF, hstaticF, if_false, hdepthLt, hbalOpt, hgtT,
+    simp only [List.length_cons, hovF, hstaticF, ite_false, hdepthLt, hbalOpt, hgtT,
       hdeqF] at st
     rw [collapse_two_stage, hcode] at st
     have hfuel : g.toNat + 1 - k = (g.toNat - k) + 1 := by omega
@@ -4104,8 +4104,8 @@ theorem RD.callValueDepthLimitOr {code : ByteArray} {ee : ExecutionEnv} {g : Sat
       eq_false (by rw [hdepth1024]; exact lt_irrefl _)
     have hdeqT : (s.executionEnv.depth == 1024) = true := by
       rw [beq_iff_eq]; exact hdepth1024
-    simp only [List.length_cons, hovF, hstaticF, if_false, hdepthF, hdeqT, and_false,
-      Bool.or_true, if_true] at st
+    simp only [List.length_cons, hovF, hstaticF, ite_false, hdepthF, hdeqT, and_false,
+      Bool.or_true, ite_true] at st
     rw [collapse_two_stage, hcode] at st
     have hfuel : g.toNat + 1 - k = (g.toNat - k) + 1 := by omega
     have hXP := hX.trans (hfuel.symm ▸ X_peel (f := g.toNat - k) st)
@@ -4196,8 +4196,8 @@ theorem RD.callDepthLimit {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s
     have hbal : ∀ y : UInt256, (({val := 0} : UInt256) ≤ y) = True := fun y => eq_true (Fin.zero_le _)
     have hgtF : ∀ y : UInt256, (({val := 0} : UInt256) > y) = False := fun y => eq_false (Fin.not_lt_zero _)
     have hdeqT : (s.executionEnv.depth == 1024) = true := by rw [beq_iff_eq]; exact hdepth1024
-    simp only [List.length_cons, hovF, hstaticF, if_false, hdepthF, hbal, hgtF, hdeqT,
-      and_false, Bool.or_true, if_true] at st
+    simp only [List.length_cons, hovF, hstaticF, ite_false, hdepthF, hbal, hgtF, hdeqT,
+      and_false, Bool.or_true, ite_true] at st
     rw [collapse_two_stage, hcode] at st
     have hfuel : g.toNat + 1 - k = (g.toNat - k) + 1 := by omega
     have hXP := hX.trans (hfuel.symm ▸ X_peel (f := g.toNat - k) st)
@@ -4848,7 +4848,7 @@ private theorem RD.terminalOOG {code : ByteArray} {g : Sat256} {s0 s : State} {k
   have hgg : s.machineState.gasAvailable.toNat < cost := by
     rw [hgas, Sat256.subNat_toNat]
     omega
-  have hstepE : Xstep (D_J code 0) s = .error .OutOfGass := by rw [hstep, if_pos hgg]
+  have hstepE : Xstep (D_J code 0) s = .error .OutOfGass := by rw [hstep, ite_eq_left hgg]
   have hfuel : g.toNat + 1 - k = (g.toNat + 1 - (k + 1)) + 1 := by omega
   rw [hfuel]; exact Ethereum.EVM.Xstep_X_X_except _ s _ _ hstepE
 
@@ -4977,7 +4977,7 @@ theorem RD.stop {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
   · have st := stop_xstep hcode hpc hdec hstk hov
     refine Or.inr ⟨stStop s, hX.trans (stepHaltSuccess (cost := 0) hgas ?_ hk (by omega)),
       by simp only [stStop]; exact hacc⟩
-    rw [if_neg (Nat.not_lt_zero _)]; exact st
+    rw [ite_eq_right (Nat.not_lt_zero _)]; exact st
 
 /-- `REVERT`: terminate with a revert returning `mem[off .. off+len]`.  Turns an `RD` cursor into the
     halting-revert terminal `RDrev`. -/

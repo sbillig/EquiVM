@@ -94,7 +94,7 @@ theorem mod_eq_ofNat {sel : UInt256} {n m : Nat} (hn : 0 < n) (hn' : n < UInt256
   apply u256_inj
   unfold UInt256.mod
   have hnv : (UInt256.ofNat n).val.val = n := ulit_toNat' n hn'
-  rw [if_neg (by
+  rw [ite_eq_right (by
     intro h
     have := beq_iff_eq.mp h
     have h0 : (UInt256.ofNat n).val.val = 0 := by rw [this]; rfl
@@ -361,7 +361,7 @@ theorem evalExpr_uint256_add_overflow {cfg : Config} {stele : Frame} {evm : EVM.
     rw [UInt256.size] at hover
     exact Int.ofNat_le.mpr hover
   simp only [evalExpr?, ha, hb, EvalResult.bind, bind, uint256Value, evalBinaryOp?]
-  rw [if_pos]
+  rw [ite_eq_left]
   simp only [Bool.or_eq_true, decide_eq_true_eq]
   exact Or.inr (by simpa [Nat.cast_add] using hge)
 
@@ -394,7 +394,7 @@ theorem memLoad_write_back (w : UInt256) (mem : ByteArray) (off : Nat) (hoff : o
     memLoad (UInt256.ofNat off) (w.toByteArray.write 0 mem off 32) = w := by
   unfold memLoad
   rw [ulit_toNat' off hoff,
-    if_neg (by have := toByteArray_write_size_ge_off_add32 w mem off hgap; omega),
+    ite_eq_right (by have := toByteArray_write_size_ge_off_add32 w mem off hgap; omega),
     toByteArray_write_read_back_of_gap _ _ _ hgap, fromByteArrayBigEndian_toByteArray, u256_ofNat_toNat]
 
 theorem memLoad_above_write (src M : ByteArray) (d r : Nat) (hsrc : 32 ≤ src.size)
@@ -410,8 +410,8 @@ theorem memLoad_below_write (w : UInt256) (M : ByteArray) (off r : Nat)
     memLoad (UInt256.ofNat r) (w.toByteArray.write 0 M off 32) = memLoad (UInt256.ofNat r) M := by
   unfold memLoad
   rw [ulit_toNat' r hr',
-    if_neg (by have := toByteArray_write_size_ge_off_add32 w M off hgap; omega),
-    if_neg (by omega), toByteArray_write_read_below_of_gap w M off r hread hbelow hgap]
+    ite_eq_right (by have := toByteArray_write_size_ge_off_add32 w M off hgap; omega),
+    ite_eq_right (by omega), toByteArray_write_read_below_of_gap w M off r hread hbelow hgap]
 
 /-! ## Comparisons, underflow, empty bytes -/
 
@@ -444,7 +444,7 @@ theorem evalExpr_uint256_sub_underflow {cfg : Config} {stele : Frame} {evm : EVM
     (hlt : a.toNat < b.toNat) :
     evalExpr? cfg stele evm (.inRange (.uint ⟨256, by decide⟩) (.binary .sub lhs rhs)) = .revert := by
   simp only [evalExpr?, ha, hb, EvalResult.bind, bind, uint256Value, evalBinaryOp?]
-  rw [if_pos]
+  rw [ite_eq_left]
   simp only [Bool.or_eq_true, decide_eq_true_eq]
   exact Or.inl (by simp only [Int.ofNat_eq_natCast]; omega)
 

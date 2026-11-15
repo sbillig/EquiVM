@@ -95,12 +95,12 @@ private theorem get?_eq_of_extract_one (a b : ByteArray) (i : Nat)
     (h : a.extract i (i + 1) = b.extract i (i + 1)) :
     a.get? i = b.get? i := by
   unfold ByteArray.get?
-  simp only [dif_pos ha, dif_pos hb]
+  simp only [dite_eq_left ha, dite_eq_left hb]
   have h0 : (a.extract i (i + 1)).get? 0 = (b.extract i (i + 1)).get? 0 := by rw [h]
   unfold ByteArray.get? at h0
   have hsa : 0 < (a.extract i (i + 1)).size := by rw [ByteArray.size_extract]; omega
   have hsb : 0 < (b.extract i (i + 1)).size := by rw [ByteArray.size_extract]; omega
-  simp only [dif_pos hsa, dif_pos hsb] at h0
+  simp only [dite_eq_left hsa, dite_eq_left hsb] at h0
   have hla : (a.extract i (i + 1)).get 0 hsa = a.get i ha := by
     change (a.extract i (i + 1))[0] = a[i]
     simpa using ByteArray.get_extract (a := a) (start := i) (stop := i + 1) (i := 0) hsa
@@ -429,7 +429,7 @@ theorem Layout.decodeUnchangedNOfLayout {layout : Layout} {template : ByteArray}
           decide (pc.toNat + 1 + len < 2 ^ 64)) = true := by
         rw [decide_eq_true (by omega), decide_eq_true (by omega)]
         rfl
-      rw [if_pos hguard, if_pos hguard]
+      rw [ite_eq_left hguard, ite_eq_left hguard]
       rw [← Reasoning.Theory.readWithPadding_eq_extract'
           (layout.runtimeN template words) (pc.toNat + 1) len hpos
           (by omega) (by rw [Layout.runtimeN_size_of_bounds hbound]; exact harghi)]
@@ -501,7 +501,7 @@ theorem Layout.decodeSite20 {layout : Layout} {template : ByteArray}
     have hb' : off + 20 ≤ template.size := by simpa using hb.2.2
     rw [decide_eq_true (by omega), decide_eq_true (by omega)]
     rfl
-  rw [if_pos hguard]
+  rw [ite_eq_left hguard]
   rw [← Reasoning.Theory.readWithPadding_eq_extract'
     (layout.runtimeN template words) off 20 (by norm_num) (by norm_num)
     (by rw [Layout.runtimeN_size_of_bounds hbound]
@@ -540,7 +540,7 @@ theorem Layout.decodeSite32N {layout : Layout} {template : ByteArray}
     have hb' : off + 32 ≤ template.size := by simpa using hb.2.2
     rw [decide_eq_true (by omega), decide_eq_true (by omega)]
     rfl
-  rw [if_pos hguard]
+  rw [ite_eq_left hguard]
   rw [← Reasoning.Theory.readWithPadding_eq_extract'
     (layout.runtimeN template words) off 32 (by norm_num) (by norm_num)
     (by rw [Layout.runtimeN_size_of_bounds hbound]
@@ -672,7 +672,7 @@ theorem Layout.decodeUnchanged {layout : Layout} {template : ByteArray}
           decide (pc.toNat + 1 + len < 2 ^ 64)) = true := by
         rw [decide_eq_true (by omega), decide_eq_true (by omega)]
         rfl
-      rw [if_pos hguard, if_pos hguard]
+      rw [ite_eq_left hguard, ite_eq_left hguard]
       rw [← Reasoning.Theory.readWithPadding_eq_extract'
           (layout.runtime template words) (pc.toNat + 1) len hpos
           (by omega) (by rw [hsize]; exact hbound)]
@@ -763,7 +763,7 @@ theorem Layout.readSiteWord {layout : Layout} {template : ByteArray}
   have hguard : (decide (off < 2 ^ 64) && decide (off + 32 < 2 ^ 64)) = true := by
     rw [decide_eq_true (by omega), decide_eq_true (by omega)]
     rfl
-  rw [if_pos hguard]
+  rw [ite_eq_left hguard]
   rw [← Reasoning.Theory.readWithPadding_eq_extract'
     (layout.runtime template words) off 32 (by norm_num) (by norm_num)
     (by rw [hsize]; exact hbound)]
@@ -853,7 +853,7 @@ theorem restrictImmutables_get? {contract : ContractDecl} {imms : Store} {n : Id
     (h : n ∈ contract.immutables.map (·.name)) :
     (restrictImmutables contract imms).get? n = imms.get? n := by
   refine (restrictImmutables_get?_foldl imms contract.immutables n ∅).trans ?_
-  rw [if_pos h]
+  rw [ite_eq_left h]
   cases imms.get? n <;> simp [Std.HashMap.get?_eq_getElem?]
 
 /-- When every layout key is a declared immutable, restricting the immutables does not change the
@@ -919,7 +919,7 @@ theorem Layout.runtime_get?_of_disjoint {layout : Layout} {template : ByteArray}
   · rw [← Layout.runtimeN_eq_runtime (words := words) (Layout.widths32_of_inBounds hbound)]
     exact Layout.runtimeN_get_unchanged i (Layout.inBoundsN_of_inBounds hbound) hdisj hi
   · have hsize := Layout.runtime_size_of_bounds (words := words) hbound
-    rw [ByteArray.get?, dif_neg (by omega), ByteArray.get?, dif_neg (by omega)]
+    rw [ByteArray.get?, dite_eq_right (by omega), ByteArray.get?, dite_eq_right (by omega)]
 
 theorem Layout.D_J_aux_runtime {layout : Layout} {template : ByteArray}
     {words : String → UInt256} (hbound : layout.inBounds template = true) :

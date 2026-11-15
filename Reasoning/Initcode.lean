@@ -21,7 +21,7 @@ theorem byteArray_get?_append_left (A B : ByteArray) {i : Nat} (h : i < A.size) 
   have hAB : i < (A ++ B).size := by
     rw [ByteArray.size_append]
     omega
-  simp only [dif_pos hAB, dif_pos h]
+  simp only [dite_eq_left hAB, dite_eq_left h]
   simp [ByteArray.get, ByteArray.data_append, Array.getElem_append_left h]
 
 /-- Extracting a window from a prefix is unchanged after appending a suffix. -/
@@ -41,7 +41,7 @@ theorem byteArray_extract'_append_left (A B : ByteArray) {i j : Nat}
     rw [hdi, hdj]
     rfl
   unfold ByteArray.extract'
-  rw [if_pos hguard, if_pos hguard]
+  rw [ite_eq_left hguard, ite_eq_left hguard]
   exact byteArray_extract_append_left A B i j hj
 
 /-- Decoding at a PC in a fixed bytecode prefix is unchanged by appending arbitrary bytes, provided
@@ -165,7 +165,7 @@ theorem D_J_aux_eq_some (c : ByteArray) (i : ℕ) (result : Array UInt256) (cᵢ
 theorem D_J_aux_ge_size (c : ByteArray) (i : ℕ) (result : Array UInt256) (h : c.size ≤ i) :
     D_J_aux c i result = result :=
   D_J_aux_eq_none c i result (by
-    have : c.get? i = none := by rw [ByteArray.get?, dif_neg (by omega)]
+    have : c.get? i = none := by rw [ByteArray.get?, dite_eq_right (by omega)]
     simp [this])
 
 /-- `c.get? i = some _` exactly when `i` is in range. -/
@@ -190,8 +190,8 @@ theorem D_J_aux_acc (c : ByteArray) (i : ℕ) (result : Array UInt256) :
           D_J_aux_acc c (N i cᵢ)
             (if cᵢ = Operation.JUMPDEST then (#[] : Array UInt256).push (UInt256.ofNat i) else #[])]
       by_cases hjd : cᵢ = Operation.JUMPDEST
-      · simp only [if_pos hjd, Array.push_eq_append, Array.empty_append, Array.append_assoc]
-      · simp only [if_neg hjd, Array.empty_append]
+      · simp only [ite_eq_left hjd, Array.push_eq_append, Array.empty_append, Array.append_assoc]
+      · simp only [ite_eq_right hjd, Array.empty_append]
 termination_by c.size - i
 decreasing_by all_goals (have := lt_size_of_get?_isSome h; simp only [N]; omega)
 

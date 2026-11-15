@@ -234,7 +234,7 @@ theorem copy_padding (src mem : ByteArray) (srcOff dest len : Nat)
       omega
     apply ByteArray.ext
     unfold ByteArray.write
-    simp only [if_neg hpos, if_neg (show ¬ srcOff ≥ src.size by omega)]
+    simp only [ite_eq_right hpos, ite_eq_right (show ¬ srcOff ≥ src.size by omega)]
     simp [hmem, ByteArray_zeroes_size,
       show min len (src.size - srcOff) = len by omega,
       show min mem.size (dest + len) = mem.size by omega,
@@ -437,7 +437,7 @@ theorem Layout.codecopy_load_scalar {layout : Layout} {template mem : ByteArray}
       (template.size + offset) dest.toNat 32 (by decide) hsrc hdest]
     omega
   unfold Reasoning.Reach.memLoad
-  rw [if_neg (by simpa [src] using Nat.not_le.mpr hsize)]
+  rw [ite_eq_right (by simpa [src] using Nat.not_le.mpr hsize)]
   rw [hread, Reasoning.Theory.fromByteArrayBigEndian_toByteArray,
     u256_ofNat_toNat]
 

@@ -144,7 +144,7 @@ theorem decodeReturn_uint256_ok (out : ByteArray) (h32 : 32 ≤ out.size) (hbig 
   have hword := bytesToWord_take32_retWord out
   rw [List.drop_zero] at hword
   unfold ABI.decodeReturnValue?
-  rw [decodeReturnValues_scalarWords_eq (by decide), if_neg (by rw [htlen]; omega),
+  rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega),
     decodeScalarWords_uint256_ok htake, hword]
 
 theorem decodeReturn_uint256_short (out : ByteArray) (h : out.size < 32) :
@@ -152,7 +152,7 @@ theorem decodeReturn_uint256_short (out : ByteArray) (h : out.size < 32) :
   have htlen : out.toList.length = out.size := by
     rw [byteArray_toList_eq, Array.length_toList]; rfl
   unfold ABI.decodeReturnValue?
-  rw [decodeReturnValues_scalarWords_eq (by decide), if_neg (by rw [htlen]; omega),
+  rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega),
     decodeScalarWords_uint256_none_short (by rw [htlen]; omega)]
 
 theorem decodeReturn_bool_zero (out : ByteArray) (h32 : 32 ≤ out.size) (hbig : out.size < 2 ^ 255)
@@ -164,7 +164,7 @@ theorem decodeReturn_bool_zero (out : ByteArray) (h32 : 32 ≤ out.size) (hbig :
     rw [List.drop_zero, List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
   unfold ABI.decodeReturnValue?
-  rw [decodeReturnValues_scalarWords_eq (by decide), if_neg (by rw [htlen]; omega)]
+  rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega)]
   simp only [decodeScalarWords?]
   rw [decodeScalarWord_bool_ok_zero (start := 0) htake (by rw [hword]; exact hw)]
   rfl
@@ -178,7 +178,7 @@ theorem decodeReturn_bool_one (out : ByteArray) (h32 : 32 ≤ out.size) (hbig : 
     rw [List.drop_zero, List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
   unfold ABI.decodeReturnValue?
-  rw [decodeReturnValues_scalarWords_eq (by decide), if_neg (by rw [htlen]; omega)]
+  rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega)]
   simp only [decodeScalarWords?]
   rw [decodeScalarWord_bool_ok_one (start := 0) htake (by rw [hword]; exact hw)]
   rfl
@@ -192,7 +192,7 @@ theorem decodeReturn_bool_noncanon (out : ByteArray) (h32 : 32 ≤ out.size) (hb
     rw [List.drop_zero, List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
   unfold ABI.decodeReturnValue?
-  rw [decodeReturnValues_scalarWords_eq (by decide), if_neg (by rw [htlen]; omega)]
+  rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega)]
   simp only [decodeScalarWords?]
   rw [decodeScalarWord_bool_none_noncanon (start := 0) htake (by rw [hword]; exact hnz) (by rw [hword]; exact hno)]
   rfl
@@ -202,7 +202,7 @@ theorem decodeReturn_bool_short (out : ByteArray) (h : out.size < 32) :
   have htlen : out.toList.length = out.size := by
     rw [byteArray_toList_eq, Array.length_toList]; rfl
   unfold ABI.decodeReturnValue?
-  rw [decodeReturnValues_scalarWords_eq (by decide), if_neg (by rw [htlen]; omega)]
+  rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega)]
   simp only [decodeScalarWords?]
   rw [decodeScalarWord_bool_none_short (start := 0) (by rw [List.drop_zero, List.length_take, htlen]; omega)]
   rfl
@@ -277,7 +277,7 @@ theorem memLoad_of_read (mem : ByteArray) (off : Nat) (w : UInt256) (hoff : off 
     (hsz : off < mem.size) (hread : mem.readWithPadding off 32 = w.toByteArray) :
     memLoad (UInt256.ofNat off) mem = w := by
   unfold memLoad
-  rw [ulit_toNat' off hoff, if_neg (by omega), hread, fromByteArrayBigEndian_toByteArray, u256_ofNat_toNat]
+  rw [ulit_toNat' off hoff, ite_eq_right (by omega), hread, fromByteArrayBigEndian_toByteArray, u256_ofNat_toNat]
 
 /-! ## Vyper's `returndatasize` check: `gt(b + 32, b + min(returndatasize, 32))` -/
 

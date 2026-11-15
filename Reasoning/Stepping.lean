@@ -100,9 +100,9 @@ theorem X_peel {vj : Array UInt256} {s s' : State} {P : Prop} [Decidable P] {f :
     (h : Xstep vj s = if P then .error .OutOfGass else .ok (s', .none)) :
     X (f + 1) vj s = if P then .error .OutOfGass else X f vj s' := by
   by_cases hg : P
-  · simp only [hg, if_true] at h ⊢
+  · simp only [hg, ite_true] at h ⊢
     exact Xstep_X_X_except f s vj _ h
-  · simp only [hg, if_false] at h ⊢
+  · simp only [hg, ite_false] at h ⊢
     exact Xstep_X_X_continue f s s' vj (X f vj s') h rfl
 
 /-- Collapse the two-stage gas guard of a memory opcode (charge `c1` for memory
@@ -112,11 +112,11 @@ theorem collapse_two_stage {α : Type _} {gas : Sat256} {c1 c2 : ℕ} {X Y : α}
      else if (gas.subNat c1).toNat < c2 then Y else X)
       = if gas.toNat < c1 + c2 then Y else X := by
   by_cases h1 : gas.toNat < c1
-  · rw [if_pos h1, if_pos (by omega)]
-  · rw [if_neg h1]
+  · rw [ite_eq_left h1, ite_eq_left (by omega)]
+  · rw [ite_eq_right h1]
     by_cases h2 : (gas.subNat c1).toNat < c2
-    · rw [if_pos h2, if_pos (by simp [Sat256.toNat, Sat256.subNat] at *; omega)]
-    · rw [if_neg h2, if_neg (by simp [Sat256.toNat, Sat256.subNat] at *; omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by simp [Sat256.toNat, Sat256.subNat] at *; omega)]
+    · rw [ite_eq_right h2, ite_eq_right (by simp [Sat256.toNat, Sat256.subNat] at *; omega)]
 
 /-! ## Trace drivers — peel a step tracking step-count `k` and cumulative cost `C` -/
 
@@ -191,8 +191,8 @@ theorem stepStatic {vj : Array UInt256} {s : State} {k C cost : ℕ} {g : Sat256
   have hfuel : g.toNat + 1 - k = (g.toNat + 1 - (k + 1)) + 1 := by omega
   rw [hfuel]
   by_cases h : s.machineState.gasAvailable.toNat < cost
-  · rw [if_pos h] at hstep; exact Or.inl (Xstep_X_X_except _ _ _ _ hstep)
-  · rw [if_neg h] at hstep; exact Or.inr (Xstep_X_X_except _ _ _ _ hstep)
+  · rw [ite_eq_left h] at hstep; exact Or.inl (Xstep_X_X_except _ _ _ _ hstep)
+  · rw [ite_eq_right h] at hstep; exact Or.inr (Xstep_X_X_except _ _ _ _ hstep)
 
 /-- The derived `BEq UInt256` is lawful (it reduces to `Fin` equality). -/
 instance : LawfulBEq UInt256 where
@@ -265,7 +265,7 @@ theorem push1_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest : 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.Push .PUSH1, some (argv, 1)) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_push1 s argv hd, if_neg hov']
+  rw [← hcode, step_push1 s argv hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush1]
 
 /-! ### PUSH2 (cost 3, pc += 3) -/
@@ -287,7 +287,7 @@ theorem push2_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest : 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.Push .PUSH2, some (argv, 2)) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_push2 s argv hd, if_neg hov']
+  rw [← hcode, step_push2 s argv hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush2]
 
 /-! ### PUSH0 (cost 2, pc += 1, pushes 0) -/
@@ -309,7 +309,7 @@ theorem push0_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.PUSH0, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_push0 s hd, if_neg hov']
+  rw [← hcode, step_push0 s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stPush0]
 
 /-! ### GAS (cost 2, pc += 1, pushes remaining gas) -/
@@ -331,7 +331,7 @@ theorem gas_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List UI
   have hd : decode s.executionEnv.code s.machineState.pc = some (.GAS, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_gas s hd, if_neg hov']
+  rw [← hcode, step_gas s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stGas]
 
 /-! ### CALLVALUE (cost 2, pc += 1, pushes weiValue) -/
@@ -353,7 +353,7 @@ theorem callvalue_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : L
   have hd : decode s.executionEnv.code s.machineState.pc = some (.CALLVALUE, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_callvalue s hd, if_neg hov']
+  rw [← hcode, step_callvalue s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stCallvalue]
 
 /-! ### TIMESTAMP (cost 2, pc += 1, pushes block timestamp) -/
@@ -375,7 +375,7 @@ theorem timestamp_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : L
   have hd : decode s.executionEnv.code s.machineState.pc = some (.TIMESTAMP, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_timestamp s hd, if_neg hov']
+  rw [← hcode, step_timestamp s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stTimestamp]
 
 /-! ### NUMBER (cost 2, pc += 1, pushes block number) -/
@@ -397,7 +397,7 @@ theorem number_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List
   have hd : decode s.executionEnv.code s.machineState.pc = some (.NUMBER, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_number s hd, if_neg hov']
+  rw [← hcode, step_number s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stNumber]
 
 /-! ### PREVRANDAO (cost 2, pc += 1, pushes block prevrandao) -/
@@ -419,7 +419,7 @@ theorem prevrandao_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.PREVRANDAO, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_prevrandao s hd, if_neg hov']
+  rw [← hcode, step_prevrandao s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stPrevrandao]
 
 /-! ### GASLIMIT (cost 2, pc += 1, pushes block gaslimit) -/
@@ -441,7 +441,7 @@ theorem gaslimit_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Li
   have hd : decode s.executionEnv.code s.machineState.pc = some (.GASLIMIT, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_gaslimit s hd, if_neg hov']
+  rw [← hcode, step_gaslimit s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stGaslimit]
 
 /-! ### CHAINID (cost 2, pc += 1, pushes the configured chain id) -/
@@ -463,7 +463,7 @@ theorem chainid_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Lis
   have hd : decode s.executionEnv.code s.machineState.pc = some (.CHAINID, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_chainid s hd, if_neg hov']
+  rw [← hcode, step_chainid s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stChainid]
 
 /-! ### DUP1 (cost 3, pc += 1, duplicates top) -/
@@ -487,7 +487,7 @@ theorem basefee_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Lis
   have hd : decode s.executionEnv.code s.machineState.pc = some (.BASEFEE, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_basefee s hd, if_neg hov']
+  rw [← hcode, step_basefee s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stBasefee]
 
 /-! ### BLOCKHASH (cost `Gblockhash = 20`, pc += 1, pops a block number, pushes its hash) -/
@@ -516,7 +516,7 @@ theorem blockhash_xstep {s : State} {code : ByteArray} {pcv n : UInt256} {t : Li
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_blockhash s hd, hstk]
   have hov' : ¬ ((n :: t).length - 1 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', stBlockhash, blockHashWord]
+  simp only [ite_eq_right hov', stBlockhash, blockHashWord]
 
 def stDup1 (s : State) (a : UInt256) (t : List UInt256) : State :=
   { s with machineState := { s.machineState with
@@ -536,7 +536,7 @@ theorem dup1_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List UI
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup1 s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 2 > 1024) := by simp only [List.length_cons] at hov ⊢; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stDup1]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stDup1]
 
 /-! ### ISZERO (cost 3, pc += 1, top ↦ isZero top) -/
 
@@ -558,7 +558,7 @@ theorem iszero_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List 
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_iszero s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 1 > 1024) := by simp only [List.length_cons] at hov ⊢; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stIsZero]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stIsZero]
 
 /-! ### MSTORE (two-stage cost `memExp + 3`, pc += 1, pops 2) -/
 
@@ -584,7 +584,7 @@ theorem mstore_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Lis
   rw [← hcode, step_mstore s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov']
+  simp only [ite_eq_right hov']
   rw [collapse_two_stage]
   simp only [GasConstants.Gverylow, stMStore]
 
@@ -612,7 +612,7 @@ theorem mstore8_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Li
   rw [← hcode, step_mstore8 s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov']
+  simp only [ite_eq_right hov']
   rw [collapse_two_stage]
   simp only [GasConstants.Gverylow, stMStore8]
 
@@ -639,7 +639,7 @@ theorem jumpi_nt_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : Lis
   have hov' : ¬ ((a :: (⟨0⟩ : UInt256) :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   simp only [hbne, Bool.false_eq_true, false_and, hov', GasConstants.Ghigh, stJumpiNT,
-    if_false]
+    ite_false]
 
 /-! ### REVERT (halt; cost `memExp`, output `m[a..a+b]`) -/
 
@@ -669,7 +669,7 @@ theorem revert_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Lis
   rw [← hcode, step_revert s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gzero, stRevert]
+  simp only [ite_eq_right hov', GasConstants.Gzero, stRevert]
 
 /-! ### RETURN (halt *success*, output `mem[a .. a+b]`, single memory-gas guard) -/
 
@@ -698,7 +698,7 @@ theorem return_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Lis
   rw [← hcode, step_return s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gzero, stReturn]
+  simp only [ite_eq_right hov', GasConstants.Gzero, stReturn]
 
 /-! ### MLOAD (pop 1, push `mem`-word, two-stage gas `memCost + 3`) -/
 
@@ -727,7 +727,7 @@ theorem mload_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List U
   rw [← hcode, step_mload s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov']
+  simp only [ite_eq_right hov']
   rw [collapse_two_stage]
   simp only [GasConstants.Gverylow, stMLoad]
 
@@ -749,7 +749,7 @@ theorem eq_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UI
   have hd : decode s.executionEnv.code s.machineState.pc = some (.EQ, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_eq s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem lt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -761,7 +761,7 @@ theorem lt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UI
   have hd : decode s.executionEnv.code s.machineState.pc = some (.LT, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_lt s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem gt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -773,7 +773,7 @@ theorem gt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UI
   have hd : decode s.executionEnv.code s.machineState.pc = some (.GT, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_gt s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem shr_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -785,7 +785,7 @@ theorem shr_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SHR, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_shr s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem sar_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -797,7 +797,7 @@ theorem sar_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SAR, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_sar s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem byte_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -809,7 +809,7 @@ theorem byte_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.BYTE, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_byte s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem sub_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -821,7 +821,7 @@ theorem sub_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SUB, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_sub s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem slt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -833,7 +833,7 @@ theorem slt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SLT, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_slt s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem sgt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -845,7 +845,7 @@ theorem sgt_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SGT, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_sgt s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem add_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -857,7 +857,7 @@ theorem add_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.ADD, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_add s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem and_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -869,7 +869,7 @@ theorem and_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.AND, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_and s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem or_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -882,7 +882,7 @@ theorem or_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UI
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_or s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem xor_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -895,7 +895,7 @@ theorem xor_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_xor s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 theorem shl_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -907,7 +907,7 @@ theorem shl_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SHL, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_shl s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stBinop]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stBinop]
 
 /-! ### MOD / MUL / DIV (cost 5 = `Glow`, `a :: b :: t ↦ res :: t`, pc += 1) -/
 
@@ -928,7 +928,7 @@ theorem mod_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_mod s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Glow, stBinop5]
+  simp only [ite_eq_right hov', GasConstants.Glow, stBinop5]
 
 theorem mul_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -940,7 +940,7 @@ theorem mul_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.MUL, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_mul s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Glow, stBinop5]
+  simp only [ite_eq_right hov', GasConstants.Glow, stBinop5]
 
 theorem signextend_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -952,7 +952,7 @@ theorem signextend_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t :
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SIGNEXTEND, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_signextend s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Glow, stBinop5]
+  simp only [ite_eq_right hov', GasConstants.Glow, stBinop5]
 
 /-! ### ADDMOD / MULMOD (cost `Gmid = 8`, pc += 1, pop three push one) -/
 
@@ -972,7 +972,7 @@ theorem addmod_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : L
   have hd : decode s.executionEnv.code s.machineState.pc = some (.ADDMOD, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_addmod s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: t).length - 3 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gmid, stTriop8]
+  simp only [ite_eq_right hov', GasConstants.Gmid, stTriop8]
 
 theorem mulmod_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -984,7 +984,7 @@ theorem mulmod_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : L
   have hd : decode s.executionEnv.code s.machineState.pc = some (.MULMOD, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_mulmod s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: t).length - 3 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gmid, stTriop8]
+  simp only [ite_eq_right hov', GasConstants.Gmid, stTriop8]
 
 theorem div_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -996,7 +996,7 @@ theorem div_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List U
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DIV, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_div s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Glow, stBinop5]
+  simp only [ite_eq_right hov', GasConstants.Glow, stBinop5]
 
 theorem sdiv_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1012,7 +1012,7 @@ theorem sdiv_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List 
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Glow, stBinop5]
+  simp only [ite_eq_right hov', GasConstants.Glow, stBinop5]
 
 /-! ### EXP (dynamic cost, `a :: b :: t ↦ exp a b :: t`, pc += 1) -/
 
@@ -1046,7 +1046,7 @@ theorem exp_xstep {s : State} {code : ByteArray} {pcv a b : UInt256}
   rw [← hcode, step_exp s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', expGasCost, stExp]
+  simp only [ite_eq_right hov', expGasCost, stExp]
 
 /-! ### POP (cost 2, pc += 1, drops top) -/
 
@@ -1066,7 +1066,7 @@ theorem pop_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List UIn
   have hd : decode s.executionEnv.code s.machineState.pc = some (.POP, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_pop s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 0 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gbase, stPop]
+  simp only [ite_eq_right hov', GasConstants.Gbase, stPop]
 
 /-! ### CALLDATASIZE (cost 2, pc += 1, pushes calldata size) -/
 
@@ -1086,7 +1086,7 @@ theorem calldatasize_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest 
          else .ok (stCalldatasize s, .none)) := by
   have hd : decode s.executionEnv.code s.machineState.pc = some (.CALLDATASIZE, .none) := by rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_calldatasize s hd, if_neg hov']
+  rw [← hcode, step_calldatasize s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stCalldatasize]
 
 /-! ### CALLDATALOAD (cost 3, pc += 1, loads a 32-byte calldata word) -/
@@ -1108,7 +1108,7 @@ theorem calldataload_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t :
   have hd : decode s.executionEnv.code s.machineState.pc = some (.CALLDATALOAD, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_calldataload s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stCalldataload]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stCalldataload]
 
 /-! ### PUSH4 (cost 3, pc += 5) -/
 
@@ -1128,7 +1128,7 @@ theorem push4_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest : 
          else .ok (stPush4 s argv, .none)) := by
   have hd : decode s.executionEnv.code s.machineState.pc = some (.Push .PUSH4, some (argv, 4)) := by rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_push4 s argv hd, if_neg hov']
+  rw [← hcode, step_push4 s argv hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush4]
 
 /-! ### PUSH20 (cost 3, pc += 21) -/
@@ -1149,7 +1149,7 @@ theorem push20_xstep {s : State} {code : ByteArray} {pcv argv : UInt256} {rest :
          else .ok (stPush20 s argv, .none)) := by
   have hd : decode s.executionEnv.code s.machineState.pc = some (.Push .PUSH20, some (argv, 20)) := by rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_push s .PUSH20 argv 20 (by decide) hd, if_neg hov']
+  rw [← hcode, step_push s .PUSH20 argv 20 (by decide) hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPush20]
 
 /-! ### JUMPDEST (cost 1, pc += 1) -/
@@ -1169,7 +1169,7 @@ theorem jumpdest_xstep {s : State} {code : ByteArray} {pcv : UInt256}
          else .ok (stJumpdest s, .none)) := by
   have hd : decode s.executionEnv.code s.machineState.pc = some (.JUMPDEST, .none) := by rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 0 > 1024) := by omega
-  rw [← hcode, step_jumpdest s hd, if_neg hov']
+  rw [← hcode, step_jumpdest s hd, ite_eq_right hov']
   simp only [GasConstants.Gjumpdest, stJumpdest]
 
 /-! ### JUMP / JUMPI taken (need the valid-jump fact `(D_J code 0).contains target`) -/
@@ -1191,7 +1191,7 @@ theorem jump_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List UI
   have hd : decode s.executionEnv.code s.machineState.pc = some (.JUMP, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_jump s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 0 > 1024) := by simp only [List.length_cons]; omega
-  simp only [hcode, hjd, not_true_eq_false, if_false, if_neg hov', GasConstants.Gmid, stJump]
+  simp only [hcode, hjd, not_true_eq_false, ite_false, ite_eq_right hov', GasConstants.Gmid, stJump]
 
 /-! ### SWAP / DUP (cost 3, pc += 1) -/
 
@@ -1211,7 +1211,7 @@ theorem swap1_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SWAP1, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_swap1 s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 2 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap2_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1223,7 +1223,7 @@ theorem swap2_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : Li
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SWAP2, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_swap2 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: t).length - 3 + 3 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap3_xstep {s : State} {code : ByteArray} {pcv a b c d : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1235,7 +1235,7 @@ theorem swap3_xstep {s : State} {code : ByteArray} {pcv a b c d : UInt256} {t : 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SWAP3, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_swap3 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: t).length - 4 + 4 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup2_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1247,7 +1247,7 @@ theorem dup2_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List 
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP2, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup2 s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 3 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup3_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1259,7 +1259,7 @@ theorem dup3_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : Lis
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP3, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup3 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: t).length - 3 + 4 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup4_xstep {s : State} {code : ByteArray} {pcv a b c d : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1271,7 +1271,7 @@ theorem dup4_xstep {s : State} {code : ByteArray} {pcv a b c d : UInt256} {t : L
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP4, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup4 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: t).length - 4 + 5 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup5_xstep {s : State} {code : ByteArray} {pcv a b c d e : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1283,7 +1283,7 @@ theorem dup5_xstep {s : State} {code : ByteArray} {pcv a b c d e : UInt256} {t :
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP5, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup5 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: t).length - 5 + 6 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup6_xstep {s : State} {code : ByteArray} {pcv a b c d e f : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1295,7 +1295,7 @@ theorem dup6_xstep {s : State} {code : ByteArray} {pcv a b c d e f : UInt256} {t
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP6, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup6 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: t).length - 6 + 7 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup7_xstep {s : State} {code : ByteArray} {pcv a b c d e f gg : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1307,7 +1307,7 @@ theorem dup7_xstep {s : State} {code : ByteArray} {pcv a b c d e f gg : UInt256}
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP7, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup7 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: t).length - 7 + 8 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup8_xstep {s : State} {code : ByteArray} {pcv a b c d e f gg hh : UInt256} {t : List UInt256}
     (hcode : s.executionEnv.code = code) (hpc : s.machineState.pc = pcv)
@@ -1319,7 +1319,7 @@ theorem dup8_xstep {s : State} {code : ByteArray} {pcv a b c d e f gg hh : UInt2
   have hd : decode s.executionEnv.code s.machineState.pc = some (.DUP8, .none) := by rw [hcode, hpc]; exact hdec
   rw [← hcode, step_dup8 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: t).length - 8 + 9 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup9_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii : UInt256} {t : List UInt256}
@@ -1337,7 +1337,7 @@ theorem dup9_xstep {s : State} {code : ByteArray}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: t).length - 9 + 10 >
       1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup10_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj : UInt256} {t : List UInt256}
@@ -1355,7 +1355,7 @@ theorem dup10_xstep {s : State} {code : ByteArray}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: t).length - 10
       + 11 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup11_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk : UInt256} {t : List UInt256}
@@ -1374,7 +1374,7 @@ theorem dup11_xstep {s : State} {code : ByteArray}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: t).length - 11
       + 12 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup12_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll : UInt256} {t : List UInt256}
@@ -1397,7 +1397,7 @@ theorem dup12_xstep {s : State} {code : ByteArray}
           12 + 13 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup13_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll mm : UInt256} {t : List UInt256}
@@ -1419,7 +1419,7 @@ theorem dup13_xstep {s : State} {code : ByteArray}
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: t).length -
           13 + 14 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup14_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll mm nn : UInt256} {t : List UInt256}
@@ -1442,7 +1442,7 @@ theorem dup14_xstep {s : State} {code : ByteArray}
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: nn ::
           t).length - 14 + 15 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup15_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll mm nn oo : UInt256} {t : List UInt256}
@@ -1465,7 +1465,7 @@ theorem dup15_xstep {s : State} {code : ByteArray}
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: nn ::
           oo :: t).length - 15 + 16 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem dup16_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll mm nn oo pp : UInt256} {t : List UInt256}
@@ -1490,7 +1490,7 @@ theorem dup16_xstep {s : State} {code : ByteArray}
           16 + 17 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 def stJumpiT (s : State) (a : UInt256) (t : List UInt256) : State :=
   { s with machineState := { s.machineState with
@@ -1510,8 +1510,8 @@ theorem jumpi_t_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Li
   rw [← hcode, step_jumpi s hd, hstk]
   have hbtrue : (b != (⟨0⟩ : UInt256)) = true := by rw [bne_iff_ne]; exact hb
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by simp only [List.length_cons]; omega
-  simp only [hbtrue, hcode, hjd, not_true_eq_false, and_false, if_neg hov',
-    GasConstants.Ghigh, stJumpiT, if_false, reduceIte]
+  simp only [hbtrue, hcode, hjd, not_true_eq_false, and_false, ite_eq_right hov',
+    GasConstants.Ghigh, stJumpiT, ite_false, reduceIte]
 
 /-! ### SSTORE (storage write; cost `Csstore` with the call-stipend floor, pops 2)
 
@@ -1581,19 +1581,19 @@ theorem sstore_xstep {s : State} {code : ByteArray} {pcv slot val : UInt256} {t 
   have hg2 : ((slot :: val :: t).length - 2 + 0 > 1024) = False :=
     eq_false (by simp only [List.length_cons]; omega)
   have hg3 : (¬ (s.executionEnv.perm = true)) = False := eq_false (by simp [hperm])
-  simp only [hg2, hg3, if_false]
+  simp only [hg2, hg3, ite_false]
   by_cases h1 : s.machineState.gasAvailable.toNat < Csstore s
-  · rw [if_pos h1,
-      if_pos (show s.machineState.gasAvailable.toNat
+  · rw [ite_eq_left h1,
+      ite_eq_left (show s.machineState.gasAvailable.toNat
           < max (Csstore s) (GasConstants.Gcallstipend + 1) from
         lt_of_lt_of_le h1 (le_max_left _ _))]
   · by_cases h2 : s.machineState.gasAvailable.toNat ≤ GasConstants.Gcallstipend
-    · rw [if_neg h1, if_pos h2,
-        if_pos (show s.machineState.gasAvailable.toNat
+    · rw [ite_eq_right h1, ite_eq_left h2,
+        ite_eq_left (show s.machineState.gasAvailable.toNat
             < max (Csstore s) (GasConstants.Gcallstipend + 1) from
           lt_of_lt_of_le (Nat.lt_succ_of_le h2) (le_max_right _ _))]
-    · rw [if_neg h1, if_neg h2,
-        if_neg (show ¬ s.machineState.gasAvailable.toNat
+    · rw [ite_eq_right h1, ite_eq_right h2,
+        ite_eq_right (show ¬ s.machineState.gasAvailable.toNat
             < max (Csstore s) (GasConstants.Gcallstipend + 1) from
           Nat.not_lt.mpr (max_le (Nat.le_of_not_lt h1) (by omega)))]
       rfl
@@ -1682,10 +1682,10 @@ theorem returndatasize_xstep {s : State} {code : ByteArray} {pcv : UInt256} {res
   rw [← hcode, step_returndatasize s hd]
   by_cases hg : s.machineState.gasAvailable.toNat < GasConstants.Gbase
   · have : s.machineState.gasAvailable.toNat < 2 := by simpa [GasConstants.Gbase] using hg
-    rw [if_pos hg, if_pos this]
+    rw [ite_eq_left hg, ite_eq_left this]
   · have hg2 : ¬ s.machineState.gasAvailable.toNat < 2 := by simpa [GasConstants.Gbase] using hg
     have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-    rw [if_neg hg, if_neg hov', if_neg hg2]
+    rw [ite_eq_right hg, ite_eq_right hov', ite_eq_right hg2]
     simp only [GasConstants.Gbase, stReturndatasize]
 
 /-! ### CODESIZE (cost 2, pushes `|code|`) -/
@@ -1709,10 +1709,10 @@ theorem codesize_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : Li
   rw [← hcode, step_codesize s hd]
   by_cases hg : s.machineState.gasAvailable.toNat < GasConstants.Gbase
   · have : s.machineState.gasAvailable.toNat < 2 := by simpa [GasConstants.Gbase] using hg
-    rw [if_pos hg, if_pos this]
+    rw [ite_eq_left hg, ite_eq_left this]
   · have hg2 : ¬ s.machineState.gasAvailable.toNat < 2 := by simpa [GasConstants.Gbase] using hg
     have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-    rw [if_neg hg, if_neg hov', if_neg hg2]
+    rw [ite_eq_right hg, ite_eq_right hov', ite_eq_right hg2]
     simp only [GasConstants.Gbase, stCodesize]
 
 /-! ### RETURNDATACOPY (`a :: b :: c :: t ↦ t`, copy `returnData[b .. b+c]` to `mem[a .. a+c]`;
@@ -1747,14 +1747,14 @@ theorem returndatacopy_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_returndatacopy s hd, hstk]
   by_cases hg1 : s.machineState.gasAvailable.toNat < memoryExpansionCost s .RETURNDATACOPY
-  · simp only [hg1, if_true]
+  · simp only [hg1, ite_true]
   · by_cases hg2 : (s.machineState.gasAvailable.subNat
         (memoryExpansionCost s .RETURNDATACOPY)).toNat
         < GasConstants.Gverylow + GasConstants.Gcopy * ((c.toNat + 31) / 32)
-    · simp only [hg1, hg2, if_true, if_false]
+    · simp only [hg1, hg2, ite_true, ite_false]
     · have hov' : ¬ ((a :: b :: c :: t).length - 3 + 0 > 1024) := by
         simp only [List.length_cons]; omega
-      simp only [hg1, hg2, hmemok, hov', if_false, stReturndatacopy]
+      simp only [hg1, hg2, hmemok, hov', ite_false, stReturndatacopy]
 
 /-! ### CALLDATACOPY (`a :: b :: c :: t ↦ t`, copy calldata bytes into memory) -/
 
@@ -1786,14 +1786,14 @@ theorem calldatacopy_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256}
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_calldatacopy s hd, hstk]
   by_cases hg1 : s.machineState.gasAvailable.toNat < memoryExpansionCost s .CALLDATACOPY
-  · simp only [hg1, if_true]
+  · simp only [hg1, ite_true]
   · by_cases hg2 : (s.machineState.gasAvailable.subNat
         (memoryExpansionCost s .CALLDATACOPY)).toNat
         < GasConstants.Gverylow + GasConstants.Gcopy * ((c.toNat + 31) / 32)
-    · simp only [hg1, hg2, if_true, if_false]
+    · simp only [hg1, hg2, ite_true, ite_false]
     · have hov' : ¬ ((a :: b :: c :: t).length - 3 + 0 > 1024) := by
         simp only [List.length_cons]; omega
-      simp only [hg1, hg2, hov', if_false, stCalldatacopy]
+      simp only [hg1, hg2, hov', ite_false, stCalldatacopy]
 
 /-! ### CODECOPY (`a :: b :: c :: t ↦ t`, copy `code[b .. b+c]` to `mem[a .. a+c]`) -/
 
@@ -1825,14 +1825,14 @@ theorem codecopy_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256}
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_codecopy s hd, hstk]
   by_cases hg1 : s.machineState.gasAvailable.toNat < memoryExpansionCost s .CODECOPY
-  · simp only [hg1, if_true]
+  · simp only [hg1, ite_true]
   · by_cases hg2 : (s.machineState.gasAvailable.subNat
         (memoryExpansionCost s .CODECOPY)).toNat
         < GasConstants.Gverylow + GasConstants.Gcopy * ((c.toNat + 31) / 32)
-    · simp only [hg1, hg2, if_true, if_false]
+    · simp only [hg1, hg2, ite_true, ite_false]
     · have hov' : ¬ ((a :: b :: c :: t).length - 3 + 0 > 1024) := by
         simp only [List.length_cons]; omega
-      simp only [hg1, hg2, hov', if_false, stCodecopy]
+      simp only [hg1, hg2, hov', ite_false, stCodecopy]
 
 /-! ### STOP (halt *success*, empty output, cost `Gzero = 0`) -/
 
@@ -1868,14 +1868,14 @@ theorem mcopy_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256}
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_mcopy s hd, hstk]
   by_cases hg1 : s.machineState.gasAvailable.toNat < memoryExpansionCost s .MCOPY
-  · simp only [hg1, if_true]
+  · simp only [hg1, ite_true]
   · by_cases hg2 : (s.machineState.gasAvailable.subNat
         (memoryExpansionCost s .MCOPY)).toNat
         < GasConstants.Gverylow + GasConstants.Gcopy * ((c.toNat + 31) / 32)
-    · simp only [hg1, hg2, if_true, if_false]
+    · simp only [hg1, hg2, ite_true, ite_false]
     · have hov' : ¬ ((a :: b :: c :: t).length - 3 + 0 > 1024) := by
         simp only [List.length_cons]; omega
-      simp only [hg1, hg2, hov', if_false, stMcopy]
+      simp only [hg1, hg2, hov', ite_false, stMcopy]
 
 def stStop (s : State) : State :=
   { s with machineState := { s.machineState with
@@ -1892,7 +1892,7 @@ theorem stop_xstep {s : State} {code : ByteArray} {pcv : UInt256} {stk : List UI
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_stop s hd]
   have hov' : ¬ (s.machineState.stack.length - 0 + 0 > 1024) := by rw [hstk]; omega
-  rw [if_neg hov']
+  rw [ite_eq_right hov']
   simp only [GasConstants.Gzero, stStop]
 
 /-! ### INVALID (halt with an invalid-instruction error) -/
@@ -1927,10 +1927,10 @@ theorem not_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List UIn
   rw [← hcode, step_not s hd, hstk]
   by_cases hg : s.machineState.gasAvailable.toNat < GasConstants.Gverylow
   · have h3 : s.machineState.gasAvailable.toNat < 3 := by simpa [GasConstants.Gverylow] using hg
-    simp only [hg, h3, if_true]
+    simp only [hg, h3, ite_true]
   · have hg2 : ¬ s.machineState.gasAvailable.toNat < 3 := by simpa [GasConstants.Gverylow] using hg
     have hov' : ¬ ((a :: t).length - 1 + 1 > 1024) := by simp only [List.length_cons]; omega
-    simp only [hg2, hov', if_false, GasConstants.Gverylow, stNot]
+    simp only [hg2, hov', ite_false, GasConstants.Gverylow, stNot]
 
 /-! ### CLZ (`a :: t ↦ clz a :: t`, cost `Glow = 5`, pc += 1, from Osaka) -/
 
@@ -1946,7 +1946,7 @@ theorem clz_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List UIn
     rw [hcode, hpc]; exact hdec
   rw [← hcode, step_clz s hd hfork, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 1 > 1024) := by simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Glow, stBinop5]
+  simp only [ite_eq_right hov', GasConstants.Glow, stBinop5]
 
 /-! ### CALLER (cost `Gbase = 2`, pc += 1, pushes `msg.sender = source`) -/
 
@@ -1967,7 +1967,7 @@ theorem caller_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest : List
   have hd : decode s.executionEnv.code s.machineState.pc = some (.CALLER, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_caller s hd, if_neg hov']
+  rw [← hcode, step_caller s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stCaller]
 
 /-! ### ADDRESS (cost `Gbase = 2`, pc += 1, pushes current contract address) -/
@@ -1990,7 +1990,7 @@ theorem address_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hd : decode s.executionEnv.code s.machineState.pc = some (.ADDRESS, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_address s hd, if_neg hov']
+  rw [← hcode, step_address s hd, ite_eq_right hov']
   simp only [GasConstants.Gbase, stAddress]
 
 /-! ### EXTCODESIZE (dynamic `Caccess`, pc += 1) -/
@@ -2024,7 +2024,7 @@ theorem extcodesize_xstep {s : State} {code : ByteArray} {pcv target : UInt256}
   rw [← hcode, step_extcodesize s hd, hstk]
   have hov' : ¬ ((target :: t).length - 1 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', stExtcodesize, extCodeSizeWord]
+  simp only [ite_eq_right hov', stExtcodesize, extCodeSizeWord]
 
 /-! ### BALANCE / EXTCODEHASH (warm/cold `Caccess` cost, pc += 1) -/
 
@@ -2057,7 +2057,7 @@ theorem balance_xstep {s : State} {code : ByteArray} {pcv target : UInt256}
   rw [← hcode, step_balance s hd, hstk]
   have hov' : ¬ ((target :: t).length - 1 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', stBalance, balanceWord]
+  simp only [ite_eq_right hov', stBalance, balanceWord]
 
 /-- The `EXTCODEHASH` word: `0` for a dead account, else its stored code hash. -/
 def extCodeHashWord (σ : AccountMap) (target : UInt256) : UInt256 :=
@@ -2089,7 +2089,7 @@ theorem extcodehash_xstep {s : State} {code : ByteArray} {pcv target : UInt256}
   rw [← hcode, step_extcodehash s hd, hstk]
   have hov' : ¬ ((target :: t).length - 1 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', stExtcodehash, extCodeHashWord]
+  simp only [ite_eq_right hov', stExtcodehash, extCodeHashWord]
 
 /-! ### SWAP4–SWAP6 (cost `Gverylow = 3`, pc += 1) -/
 
@@ -2105,7 +2105,7 @@ theorem swap4_xstep {s : State} {code : ByteArray} {pcv a b c d e : UInt256} {t 
   rw [← hcode, step_swap4 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: t).length - 5 + 5 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap5_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f : UInt256} {t : List UInt256}
@@ -2121,7 +2121,7 @@ theorem swap5_xstep {s : State} {code : ByteArray}
   rw [← hcode, step_swap5 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: t).length - 6 + 6 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap6_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg : UInt256} {t : List UInt256}
@@ -2137,7 +2137,7 @@ theorem swap6_xstep {s : State} {code : ByteArray}
   rw [← hcode, step_swap6 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: t).length - 7 + 7 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap7_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg h : UInt256} {t : List UInt256}
@@ -2153,7 +2153,7 @@ theorem swap7_xstep {s : State} {code : ByteArray}
   rw [← hcode, step_swap7 s hd, hstk]
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: h :: t).length - 8 + 8 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap8_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii : UInt256} {t : List UInt256}
@@ -2170,7 +2170,7 @@ theorem swap8_xstep {s : State} {code : ByteArray}
   have hov' :
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: t).length - 9 + 9 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap9_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj : UInt256} {t : List UInt256}
@@ -2191,7 +2191,7 @@ theorem swap9_xstep {s : State} {code : ByteArray}
         + 10 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap10_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk : UInt256} {t : List UInt256}
@@ -2210,7 +2210,7 @@ theorem swap10_xstep {s : State} {code : ByteArray}
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: t).length - 11 + 11 >
           1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap11_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll : UInt256} {t : List UInt256}
@@ -2231,7 +2231,7 @@ theorem swap11_xstep {s : State} {code : ByteArray}
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: t).length - 12 +
           12 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap12_xstep {s : State} {code : ByteArray} {pcv : UInt256}
     {a b c d e f gg hh ii jj kk ll mm : UInt256} {t : List UInt256}
@@ -2249,7 +2249,7 @@ theorem swap12_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: t).length - 13 + 13 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap13_xstep {s : State} {code : ByteArray}
     {pcv a b c d e f gg hh ii jj kk ll mm nn : UInt256} {t : List UInt256}
@@ -2271,7 +2271,7 @@ theorem swap13_xstep {s : State} {code : ByteArray}
       ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: nn :: t).length -
           14 + 14 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap14_xstep {s : State} {code : ByteArray} {pcv : UInt256}
     {a b c d e f gg hh ii jj kk ll mm nn oo : UInt256} {t : List UInt256}
@@ -2289,7 +2289,7 @@ theorem swap14_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: nn :: oo :: t).length - 15 + 15 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap15_xstep {s : State} {code : ByteArray} {pcv : UInt256}
     {a b c d e f gg hh ii jj kk ll mm nn oo pp : UInt256} {t : List UInt256}
@@ -2307,7 +2307,7 @@ theorem swap15_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: nn :: oo :: pp :: t).length - 16 + 16 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 theorem swap16_xstep {s : State} {code : ByteArray} {pcv : UInt256}
     {a b c d e f gg hh ii jj kk ll mm nn oo pp qq : UInt256} {t : List UInt256}
@@ -2325,7 +2325,7 @@ theorem swap16_xstep {s : State} {code : ByteArray} {pcv : UInt256}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: gg :: hh :: ii :: jj :: kk :: ll :: mm :: nn :: oo :: pp :: qq :: t).length - 17 + 17 > 1024) := by
     simp only [List.length_cons]
     omega
-  simp only [if_neg hov', GasConstants.Gverylow, stSwap]
+  simp only [ite_eq_right hov', GasConstants.Gverylow, stSwap]
 
 /-! ### KECCAK256 (two-stage cost `memExp + hashCost`, pc += 1, pops 2, pushes `KEC(mem[a..a+b])`) -/
 
@@ -2355,7 +2355,7 @@ theorem keccak_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : Lis
   rw [← hcode, step_keccak s hd, hstk]
   have hov' : ¬ ((a :: b :: t).length - 2 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [collapse_two_stage, if_neg hov', stKeccak]
+  simp only [collapse_two_stage, ite_eq_right hov', stKeccak]
 
 /-! ### SLOAD (cost `Csload`, pc += 1, pops slot, pushes `storage[codeOwner][slot]`) -/
 
@@ -2383,7 +2383,7 @@ theorem sload_xstep {s : State} {code : ByteArray} {pcv a : UInt256} {t : List U
   rw [← hcode, step_sload s hd, hstk]
   have hov' : ¬ ((a :: t).length - 1 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', stSload]
+  simp only [ite_eq_right hov', stSload]
 
 /-! ### Transient storage -/
 
@@ -2416,7 +2416,7 @@ theorem tload_xstep {s : State} {code : ByteArray} {pcv slot : UInt256}
   rw [← hcode, step_tload s hd, hstk]
   have hov' : ¬ ((slot :: t).length - 1 + 1 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', stTLoad]
+  simp only [ite_eq_right hov', stTLoad]
 
 def stTStore (s : State) (slot val : UInt256) (t : List UInt256) : State :=
   {s with
@@ -2440,7 +2440,7 @@ theorem tstore_xstep {s : State} {code : ByteArray} {pcv slot val : UInt256}
   rw [← hcode, step_tstore s hd, hstk]
   have hov' : ¬ ((slot :: val :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
-  simp only [if_neg hov', hperm, not_true_eq_false, if_false, stTStore, tstoreAccountMap]
+  simp only [ite_eq_right hov', hperm, not_true_eq_false, ite_false, stTStore, tstoreAccountMap]
 
 /-! ### LOG1/LOG2/LOG3/LOG4 (two-stage cost `memExp + logCost`, appends a log; needs `perm`) -/
 
@@ -2472,7 +2472,7 @@ theorem log0_xstep {s : State} {code : ByteArray} {pcv a b : UInt256} {t : List 
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermF : (¬ s.executionEnv.perm = true) = False := eq_false (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermF, if_false, stLog0]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermF, ite_false, stLog0]
 
 def stLog1 (s : State) (a b c : UInt256) (t : List UInt256) : State :=
   {s with
@@ -2502,7 +2502,7 @@ theorem log1_xstep {s : State} {code : ByteArray} {pcv a b c : UInt256} {t : Lis
   have hov' : ¬ ((a :: b :: c :: t).length - 3 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermF : (¬ s.executionEnv.perm = true) = False := eq_false (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermF, if_false, stLog1]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermF, ite_false, stLog1]
 
 def stLog2 (s : State) (a b c d : UInt256) (t : List UInt256) : State :=
   {s with
@@ -2533,7 +2533,7 @@ theorem log2_xstep {s : State} {code : ByteArray} {pcv a b c d : UInt256} {t : L
   have hov' : ¬ ((a :: b :: c :: d :: t).length - 4 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermF : (¬ s.executionEnv.perm = true) = False := eq_false (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermF, if_false, stLog2]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermF, ite_false, stLog2]
 
 def stLog3 (s : State) (a b c d e : UInt256) (t : List UInt256) : State :=
   {s with
@@ -2564,7 +2564,7 @@ theorem log3_xstep {s : State} {code : ByteArray} {pcv a b c d e : UInt256} {t :
   have hov' : ¬ ((a :: b :: c :: d :: e :: t).length - 5 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermF : (¬ s.executionEnv.perm = true) = False := eq_false (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermF, if_false, stLog3]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermF, ite_false, stLog3]
 
 def stLog4 (s : State) (a b c d e f : UInt256) (t : List UInt256) : State :=
   {s with
@@ -2598,7 +2598,7 @@ theorem log4_xstep {s : State} {code : ByteArray}
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: t).length - 6 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermF : (¬ s.executionEnv.perm = true) = False := eq_false (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermF, if_false, stLog4]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermF, ite_false, stLog4]
 
 /-! ### Static mode (`perm = false`): `SSTORE`, `LOG*` and a value-transferring `CALL` raise
 `StaticModeViolation` once the gas checks preceding the permission check pass. -/
@@ -2618,7 +2618,7 @@ theorem sstore_xstep_static {s : State} {code : ByteArray} {pcv slot val : UInt2
   have hg2 : ((slot :: val :: t).length - 2 + 0 > 1024) = False :=
     eq_false (by simp only [List.length_cons]; omega)
   have hg3 : (¬ (s.executionEnv.perm = true)) = True := eq_true (by simp [hperm])
-  simp only [hg2, hg3, if_false, if_true]
+  simp only [hg2, hg3, ite_false, ite_true]
 
 theorem log1_xstep_static {s : State} {code : ByteArray} {pcv a b c : UInt256}
     {t : List UInt256}
@@ -2636,7 +2636,7 @@ theorem log1_xstep_static {s : State} {code : ByteArray} {pcv a b c : UInt256}
   have hov' : ¬ ((a :: b :: c :: t).length - 3 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermT : (¬ s.executionEnv.perm = true) = True := eq_true (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermT, if_true]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermT, ite_true]
 
 theorem log0_xstep_static {s : State} {code : ByteArray} {pcv a b : UInt256}
     {t : List UInt256}
@@ -2654,7 +2654,7 @@ theorem log0_xstep_static {s : State} {code : ByteArray} {pcv a b : UInt256}
   have hov' : ¬ ((a :: b :: t).length - 2 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermT : (¬ s.executionEnv.perm = true) = True := eq_true (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermT, if_true]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermT, ite_true]
 
 theorem log2_xstep_static {s : State} {code : ByteArray} {pcv a b c d : UInt256}
     {t : List UInt256}
@@ -2672,7 +2672,7 @@ theorem log2_xstep_static {s : State} {code : ByteArray} {pcv a b c d : UInt256}
   have hov' : ¬ ((a :: b :: c :: d :: t).length - 4 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermT : (¬ s.executionEnv.perm = true) = True := eq_true (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermT, if_true]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermT, ite_true]
 
 theorem log3_xstep_static {s : State} {code : ByteArray} {pcv a b c d e : UInt256}
     {t : List UInt256}
@@ -2690,7 +2690,7 @@ theorem log3_xstep_static {s : State} {code : ByteArray} {pcv a b c d e : UInt25
   have hov' : ¬ ((a :: b :: c :: d :: e :: t).length - 5 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermT : (¬ s.executionEnv.perm = true) = True := eq_true (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermT, if_true]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermT, ite_true]
 
 theorem log4_xstep_static {s : State} {code : ByteArray} {pcv a b c d e f : UInt256}
     {t : List UInt256}
@@ -2708,7 +2708,7 @@ theorem log4_xstep_static {s : State} {code : ByteArray} {pcv a b c d e f : UInt
   have hov' : ¬ ((a :: b :: c :: d :: e :: f :: t).length - 6 + 0 > 1024) := by
     simp only [List.length_cons]; omega
   have hpermT : (¬ s.executionEnv.perm = true) = True := eq_true (by simp [hperm])
-  simp only [collapse_two_stage, if_neg hov', hpermT, if_true]
+  simp only [collapse_two_stage, ite_eq_right hov', hpermT, ite_true]
 
 /-- A `CALL` with nonzero value in static mode.  The cost is left existential (memory expansion
     plus `Ccall`); only the out-of-gas / static-halt dichotomy is needed downstream. -/
@@ -2731,7 +2731,7 @@ theorem call_xstep_static {s : State} {code : ByteArray}
     eq_false (by omega)
   have hstaticT : (¬ s.executionEnv.perm = true ∧ value ≠ ({ val := 0 } : UInt256)) = True :=
     eq_true ⟨by simp [hperm], hval⟩
-  simp only [List.length_cons, hovF, hstaticT, if_false, if_true] at st
+  simp only [List.length_cons, hovF, hstaticT, ite_false, ite_true] at st
   rw [collapse_two_stage, hcode] at st
   exact ⟨_, st⟩
 
@@ -2757,7 +2757,7 @@ theorem pushConst_xstep {s : State} {code : ByteArray} {pcv arg : UInt256} {widt
   have hd : decode s.executionEnv.code s.machineState.pc = some (.Push op, some (arg, width)) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_push s op arg width hop hd, if_neg hov']
+  rw [← hcode, step_push s op arg width hop hd, ite_eq_right hov']
   simp only [GasConstants.Gverylow, stPushConst]
 
 
@@ -2779,7 +2779,7 @@ theorem selfbalance_xstep {s : State} {code : ByteArray} {pcv : UInt256} {rest :
   have hd : decode s.executionEnv.code s.machineState.pc = some (.SELFBALANCE, .none) := by
     rw [hcode, hpc]; exact hdec
   have hov' : ¬ (s.machineState.stack.length - 0 + 1 > 1024) := by rw [hstk]; omega
-  rw [← hcode, step_selfbalance s hd, if_neg hov']
+  rw [← hcode, step_selfbalance s hd, ite_eq_right hov']
   simp only [GasConstants.Glow, stSelfbalance]
 
 

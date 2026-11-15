@@ -116,7 +116,7 @@ theorem execStmt_assign_static {cfg : Config} {stele stele' : Frame} {evm evm' :
       (if evm.executionEnv.perm then .ok stele' evm' else .staticViolation))
     (hperm : evm.executionEnv.perm = false) :
     ExecStmt cfg stele evm (.assign .storage slot rhs) .staticViolation := by
-  simpa only [hperm, Bool.false_eq_true, if_false] using h
+  simpa only [hperm, Bool.false_eq_true, ite_false] using h
 
 /-- The non-payable guard passes but the second `require(guard)` fails: the block reverts. -/
 theorem nonpayableSecondRequireReverts {cfg : Config} {stele : Frame}
@@ -1096,7 +1096,7 @@ theorem evalExpr_uint256_inRange {cfg : Config} {caller : Frame} {evm : EVM.Stat
   change word.toNat < 2 ^ 256 at hbound
   have hn : ¬ Int.ofNat word.toNat < 0 := by simp only [Int.ofNat_eq_natCast]; omega
   have hh : ¬ Int.ofNat word.toNat ≥ 2 ^ 256 := by simp only [Int.ofNat_eq_natCast]; omega
-  simp only [hn, hh, decide_false, Bool.false_or, Bool.false_eq_true, if_false, pure]
+  simp only [hn, hh, decide_false, Bool.false_or, Bool.false_eq_true, ite_false, pure]
 
 theorem evalExpr_uint256_mul {cfg : Config} {caller : Frame} {evm : EVM.State}
     {lhs rhs : Expr} {a b : UInt256}
@@ -1121,7 +1121,7 @@ theorem evalExpr_uint256_mul_overflow {cfg : Config} {caller : Frame} {evm : EVM
     rw [UInt256.size] at hover
     exact Int.ofNat_le.mpr hover
   simp only [evalExpr?, ha, hb, EvalResult.bind, bind, uint256Value, evalBinaryOp?]
-  rw [if_pos]
+  rw [ite_eq_left]
   simp only [Bool.or_eq_true, decide_eq_true_eq]
   exact Or.inr (by simpa [Nat.cast_mul] using hge)
 
@@ -1243,7 +1243,7 @@ theorem uint256RangeSourceOk {cfg stele evm expr} {n : Nat}
     simp only [Int.ofNat_eq_natCast]
     omega
   simp only [evalExpr?, he, bind, EvalResult.bind, hi0, hi, decide_false, Bool.or_self,
-    Bool.false_eq_true, if_false, pure]
+    Bool.false_eq_true, ite_false, pure]
 
 theorem uint256RangeSourceOverflow {cfg stele evm expr} {n : Nat}
     (he : evalExpr? cfg stele evm expr = .ok (.int (Int.ofNat n)))
@@ -1253,7 +1253,7 @@ theorem uint256RangeSourceOverflow {cfg stele evm expr} {n : Nat}
     change 2 ^ 256 ≤ n at hn
     simp only [Int.ofNat_eq_natCast]
     omega
-  simp only [evalExpr?, he, bind, EvalResult.bind, hi, decide_true, Bool.or_true, if_true]
+  simp only [evalExpr?, he, bind, EvalResult.bind, hi, decide_true, Bool.or_true, ite_true]
 
 theorem checkedAddSourceOk {cfg stele evm lhs rhs a b}
     (ha : evalExpr? cfg stele evm lhs = .ok (.int (Int.ofNat (UInt256.toNat a))))
@@ -1308,7 +1308,7 @@ theorem divSourceOk {cfg stele evm lhs rhs a b}
     intro he
     exact hn (uint256_toNat_eq_zero (by omega))
   simp only [evalExpr?, ha, hb, bind, EvalResult.bind, evalBinaryOp?,
-    udiv_toNat, Int.ofNat_eq_natCast, hz, if_false, Int.natCast_ediv]
+    udiv_toNat, Int.ofNat_eq_natCast, hz, ite_false, Int.natCast_ediv]
 
 theorem subSourceOk {cfg stele evm lhs rhs a b}
     (ha : evalExpr? cfg stele evm lhs = .ok (.int (Int.ofNat (UInt256.toNat a))))
@@ -1346,7 +1346,7 @@ def addressLiteral (a : EVM.Address) : Expr :=
 theorem evalAddressLiteral (cfg : Config) (frame : Frame) (evm : EVM.State) (a : AccountAddress) :
     evalExpr? cfg frame evm (addressLiteral a) = .ok (.address a) := by
   simp only [addressLiteral, evalExpr?, EvalResult.bind, bind, pure, castValue?]
-  erw [if_neg]
+  erw [ite_eq_right]
   · simp [EvalResult.ofOption, AccountAddress.ofNat]
   · exact not_lt.mpr (Int.natCast_nonneg (↑a : Nat))
 

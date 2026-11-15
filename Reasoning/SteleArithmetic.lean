@@ -119,7 +119,7 @@ theorem evalExpr_add256_ok {cfg : Config} {contract : ContractDecl}
     rw [hsum, uadd_toNat, Nat.mod_eq_of_lt hfit]
   simp [sourceAdd256, sourceCheckedUint256, evalExpr?, EvalResult.bind, bind, hx, hy, evalBinaryOp?,
     sourceUInt256, hword]
-  rw [if_neg]
+  rw [ite_eq_right]
   · rfl
   · intro hbad
     rcases hbad with hbad | hbad
@@ -172,7 +172,7 @@ theorem evalExpr_wrappingSub256_ok {cfg : Config} {contract : ContractDecl}
     simp [sourceCheckedSub256, sourceCheckedUint256, evalExpr?, EvalResult.bind, bind, hx, hy,
       evalBinaryOp?,
       sourceUInt256]
-    rw [if_neg]
+    rw [ite_eq_right]
     · rw [hsubInt, ← hdiffNat]
       rfl
     · intro hbad
@@ -220,7 +220,7 @@ theorem evalExpr_wrappingSub256_underflow_ok {cfg : Config} {contract : Contract
         .ok (.int (Int.ofNat diff.toNat)) := by
     simp [sourceCheckedUint256, evalExpr?, EvalResult.bind, bind, hx, hy, evalBinaryOp?,
       sourceUInt256]
-    rw [if_neg]
+    rw [ite_eq_right]
     · have hval :
           ((UInt256.size : Nat) : Int) + (a.toNat : Int) - (b.toNat : Int) =
             (diff.toNat : Int) := by
@@ -286,7 +286,7 @@ theorem evalExpr_mul256_ok {cfg : Config} {contract : ContractDecl}
     rw [hprod, umul_toNat a b hfit]
   simp [sourceMul256, sourceCheckedUint256, evalExpr?, EvalResult.bind, bind, hx, hy, evalBinaryOp?,
     sourceUInt256, hword]
-  rw [if_neg]
+  rw [ite_eq_right]
   · rfl
   · intro hbad
     rcases hbad with hbad | hbad
@@ -504,7 +504,7 @@ theorem evalExpr_s256_ok {cfg : Config} {contract : ContractDecl}
   have hnlo : ¬ i < -((2 : Int) ^ 255) := not_lt.mpr hlo
   have hnhi : ¬ i ≥ (2 : Int) ^ 255 := not_le.mpr hhi
   simp [sourceCheckedInt256, sourceInt256, evalExpr?, EvalResult.bind, bind, he]
-  rw [if_neg]
+  rw [ite_eq_right]
   · rfl
   · intro hbad
     rcases hbad with hbad | hbad
@@ -550,7 +550,7 @@ theorem evalExpr_checkedSub256_ok {cfg : Config} {contract : ContractDecl}
     not_le.mpr (Int.ofNat_lt.mpr (by simpa [UInt256.size] using hltNat))
   simp [sourceCheckedSub256, sourceCheckedUint256, evalExpr?, EvalResult.bind, bind, hx, hy,
     evalBinaryOp?, sourceUInt256]
-  rw [if_neg]
+  rw [ite_eq_right]
   · rw [hsubInt, ← hdiffNat]
     rfl
   · intro hbad
@@ -1173,7 +1173,7 @@ theorem cast_addressAsUint256 (w : UInt256) :
   have hlt : (AccountAddress.ofNat w.toNat).toNat < EVM.twoPow 256 := by
     exact lt_of_lt_of_le (AccountAddress.ofNat w.toNat).isLt (by decide)
   simp only [castValue?, packedUInt256StorageType, abiUInt256Int]
-  rw [if_pos hlt]
+  rw [ite_eq_left hlt]
   rw [haddr]
 
 end Reasoning.Theory

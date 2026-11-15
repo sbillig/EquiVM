@@ -156,7 +156,7 @@ theorem pushArray_vyper_ok {cfg : Config} {layout : StorageLayout} {bounds : Vyp
     pushArray? cfg stele evm slot (some v) =
       .ok (Stele.EVM.storageStore evm1 evm1.executionEnv.codeOwner s
         (UInt256.ofNat ((Stele.EVM.storageLoad evm evm.executionEnv.codeOwner s).toNat + 1))) := by
-  simp only [pushArray?, hnotrans, Bool.false_eq_true, if_false, resolveStorageRef?_ok hbase her hty,
+  simp only [pushArray?, hnotrans, Bool.false_eq_true, ite_false, resolveStorageRef?_ok hbase her hty,
     bind, EvalResult.bind, hbackend, vyperStorageBackend, vyperPushStorage?, hcheck,
     vyperLength_ok hbounds hanchor, hbounds, pure]
   have hwrite' := hwrite
@@ -177,7 +177,7 @@ theorem pushArray_vyper_full {cfg : Config} {layout : StorageLayout} {bounds : V
     (hcap : cap ≤ (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner s).toNat)
     (hnotrans : usesTransientStorage stele slot = false) :
     pushArray? cfg stele evm slot (some v) = .revert := by
-  simp only [pushArray?, hnotrans, Bool.false_eq_true, if_false, resolveStorageRef?_ok hbase her hty,
+  simp only [pushArray?, hnotrans, Bool.false_eq_true, ite_false, resolveStorageRef?_ok hbase her hty,
     bind, EvalResult.bind, hbackend, vyperStorageBackend, vyperPushStorage?, hcheck,
     vyperLength_ok hbounds hanchor, hbounds, pure]
   simp [hcap]
@@ -197,7 +197,7 @@ theorem popArray_vyper_ok {cfg : Config} {layout : StorageLayout} {bounds : Vype
     popArray? cfg stele evm slot =
       .ok (Stele.EVM.storageStore evm evm.executionEnv.codeOwner s
         (UInt256.ofNat ((Stele.EVM.storageLoad evm evm.executionEnv.codeOwner s).toNat - 1))) := by
-  simp only [popArray?, hnotrans, Bool.false_eq_true, if_false, resolveStorageRef?_ok hbase her hty,
+  simp only [popArray?, hnotrans, Bool.false_eq_true, ite_false, resolveStorageRef?_ok hbase her hty,
     bind, EvalResult.bind, hbackend, vyperStorageBackend, vyperPopStorage?, hcheck,
     vyperLength_ok hbounds hanchor, pure]
   simp [show (Stele.EVM.storageLoad evm evm.executionEnv.codeOwner s).toNat ≠ 0 from by omega,

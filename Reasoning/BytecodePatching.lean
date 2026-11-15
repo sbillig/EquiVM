@@ -83,7 +83,7 @@ theorem byteArray_get?_extract_prefix (b : ByteArray) {n i : Nat}
     rw [ByteArray.size_extract]
     omega
   have hright : i < b.size := by omega
-  simp only [dif_pos hleft, dif_pos hright]
+  simp only [dite_eq_left hleft, dite_eq_left hright]
   apply congrArg some
   change (b.extract 0 n)[i] = b[i]
   simp only [ByteArray.get_extract, Nat.zero_add]
@@ -130,7 +130,7 @@ theorem spliceBytes_extract'_left {template value out : ByteArray} {off i j : Na
   have hguard : (decide (i < 2 ^ 64) && decide (j < 2 ^ 64)) = true := by
     rw [decide_eq_true hi64, decide_eq_true hj64]
     rfl
-  rw [if_pos hguard, if_pos hguard]
+  rw [ite_eq_left hguard, ite_eq_left hguard]
   exact spliceBytes_extract_left hsp hj
 
 theorem spliceBytes_extract_middle {template value out : ByteArray} {off : Nat}
@@ -167,7 +167,7 @@ theorem patchRuntime_get?_left {template out : ByteArray} {ps : List (Nat × Byt
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at hpatch
+      · rw [ite_eq_left hsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none => simp [hsp] at hpatch
         | some mid =>
@@ -175,7 +175,7 @@ theorem patchRuntime_get?_left {template out : ByteArray} {ps : List (Nat × Byt
             calc
               out.get? i = mid.get? i := ih hpatch hrest
               _ = template.get? i := spliceBytes_get?_left hsp (by omega)
-      · rw [if_neg hsz] at hpatch
+      · rw [ite_eq_right hsz] at hpatch
         simp at hpatch
 
 theorem patchRuntime_extract_left {template out : ByteArray} {ps : List (Nat × ByteArray)}
@@ -195,7 +195,7 @@ theorem patchRuntime_extract_left {template out : ByteArray} {ps : List (Nat × 
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at hpatch
+      · rw [ite_eq_left hsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none => simp [hsp] at hpatch
         | some mid =>
@@ -203,7 +203,7 @@ theorem patchRuntime_extract_left {template out : ByteArray} {ps : List (Nat × 
             calc
               out.extract i j = mid.extract i j := ih hpatch hrest
               _ = template.extract i j := spliceBytes_extract_left hsp (le_trans hj hp)
-      · rw [if_neg hsz] at hpatch
+      · rw [ite_eq_right hsz] at hpatch
         simp at hpatch
 
 theorem patchRuntime_extract'_left {template out : ByteArray} {ps : List (Nat × ByteArray)}
@@ -224,7 +224,7 @@ theorem patchRuntime_extract'_left {template out : ByteArray} {ps : List (Nat ×
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at hpatch
+      · rw [ite_eq_left hsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none => simp [hsp] at hpatch
         | some mid =>
@@ -233,7 +233,7 @@ theorem patchRuntime_extract'_left {template out : ByteArray} {ps : List (Nat ×
               out.extract' i j = mid.extract' i j := ih hpatch hrest
               _ = template.extract' i j :=
                 spliceBytes_extract'_left hsp hi64 hj64 (le_trans hj hp)
-      · rw [if_neg hsz] at hpatch
+      · rw [ite_eq_right hsz] at hpatch
         simp at hpatch
 
 theorem patchRuntime_decode_left {template out : ByteArray} {ps : List (Nat × ByteArray)}
@@ -355,14 +355,14 @@ theorem byteArray_get?_append_right (A B : ByteArray) {i : Nat} (h : A.size ≤ 
   · have hb : i - A.size < B.size := by
       rw [ByteArray.size_append] at hab
       omega
-    simp only [dif_pos hab, dif_pos hb]
+    simp only [dite_eq_left hab, dite_eq_left hb]
     apply congrArg some
     change (A ++ B)[i] = B[i - A.size]
     rw [ByteArray.get_append_right h]
   · have hb : ¬ i - A.size < B.size := by
       rw [ByteArray.size_append] at hab
       omega
-    simp only [dif_neg hab, dif_neg hb]
+    simp only [dite_eq_right hab, dite_eq_right hb]
 
 theorem spliceBytes_get?_right {template value out : ByteArray} {off i : Nat}
     (hsp : spliceBytes? template off value = some out) (hi : off + value.size ≤ i) :
@@ -382,7 +382,7 @@ theorem spliceBytes_get?_right {template value out : ByteArray} {off i : Nat}
     · have htemp : i < template.size := by
         rw [hprefix, ByteArray.size_extract] at hsuf
         omega
-      simp only [dif_pos hsuf, dif_pos htemp]
+      simp only [dite_eq_left hsuf, dite_eq_left htemp]
       apply congrArg some
       let suffix := template.extract (off + value.size) template.size
       change suffix[i - (template.extract 0 off ++ value).size] = template[i]
@@ -393,7 +393,7 @@ theorem spliceBytes_get?_right {template value out : ByteArray} {off i : Nat}
     · have htemp : ¬ i < template.size := by
         rw [hprefix, ByteArray.size_extract] at hsuf
         omega
-      simp only [dif_neg hsuf, dif_neg htemp]
+      simp only [dite_eq_right hsuf, dite_eq_right htemp]
   · cases hsp
 
 theorem spliceBytes_extract_right {template value out : ByteArray} {off i j : Nat}
@@ -426,7 +426,7 @@ theorem spliceBytes_extract'_right {template value out : ByteArray} {off i j : N
   have hguard : (decide (i < 2 ^ 64) && decide (j < 2 ^ 64)) = true := by
     rw [decide_eq_true hi64, decide_eq_true hj64]
     rfl
-  rw [if_pos hguard, if_pos hguard]
+  rw [ite_eq_left hguard, ite_eq_left hguard]
   exact spliceBytes_extract_right hsp hi
 
 theorem spliceBytes_get?_disjoint {template value out : ByteArray} {off i : Nat}
@@ -471,7 +471,7 @@ theorem patchRuntime_get?_disjoint {template out : ByteArray} {ps : List (Nat ×
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at hpatch
+      · rw [ite_eq_left hsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none => simp [hsp] at hpatch
         | some mid =>
@@ -483,7 +483,7 @@ theorem patchRuntime_get?_disjoint {template out : ByteArray} {ps : List (Nat ×
             calc
               out.get? i = mid.get? i := ih hpatch hrest
               _ = template.get? i := spliceBytes_get?_disjoint hsp hp
-      · rw [if_neg hsz] at hpatch
+      · rw [ite_eq_right hsz] at hpatch
         simp at hpatch
 
 theorem patchRuntime_D_J_aux_contains_of_patchScanReaches
@@ -550,7 +550,7 @@ theorem patchRuntime_extract_disjoint {template out : ByteArray}
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at hpatch
+      · rw [ite_eq_left hsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none => simp [hsp] at hpatch
         | some mid =>
@@ -562,7 +562,7 @@ theorem patchRuntime_extract_disjoint {template out : ByteArray}
             calc
               out.extract i j = mid.extract i j := ih hpatch hrest
               _ = template.extract i j := spliceBytes_extract_disjoint hsp hp
-      · rw [if_neg hsz] at hpatch
+      · rw [ite_eq_right hsz] at hpatch
         simp at hpatch
 
 theorem patchRuntime_extract_exact_cons {template out value : ByteArray}
@@ -573,7 +573,7 @@ theorem patchRuntime_extract_exact_cons {template out value : ByteArray}
     out.extract off (off + 32) = value := by
   unfold patchRuntime at hpatch
   simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
-  rw [if_pos hsize] at hpatch
+  rw [ite_eq_left hsize] at hpatch
   cases hsp : spliceBytes? template off value with
   | none =>
       simp [hsp] at hpatch
@@ -600,7 +600,7 @@ theorem patchRuntime_extract_exact_split {template out value : ByteArray}
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hpsz : p.2.size = 32
-      · rw [if_pos hpsz] at hpatch
+      · rw [ite_eq_left hpsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none =>
             simp [hsp] at hpatch
@@ -617,7 +617,7 @@ theorem patchRuntime_extract_exact_split {template out value : ByteArray}
               rw [List.foldlM_append]
               exact hpatch
             exact ih hpatch'
-      · rw [if_neg hpsz] at hpatch
+      · rw [ite_eq_right hpsz] at hpatch
         simp at hpatch
 
 theorem patchRuntime_extract'_exact_split {template out value : ByteArray}
@@ -631,7 +631,7 @@ theorem patchRuntime_extract'_exact_split {template out value : ByteArray}
   have hguard : (decide (off < 2 ^ 64) && decide (off + 32 < 2 ^ 64)) = true := by
     rw [decide_eq_true hi64, decide_eq_true hj64]
     rfl
-  rw [if_pos hguard]
+  rw [ite_eq_left hguard]
   exact patchRuntime_extract_exact_split hpatch hsize hpost
 
 theorem patchRuntime_extract'_disjoint {template out : ByteArray}
@@ -643,7 +643,7 @@ theorem patchRuntime_extract'_disjoint {template out : ByteArray}
   have hguard : (decide (i < 2 ^ 64) && decide (j < 2 ^ 64)) = true := by
     rw [decide_eq_true hi64, decide_eq_true hj64]
     rfl
-  rw [if_pos hguard, if_pos hguard]
+  rw [ite_eq_left hguard, ite_eq_left hguard]
   exact patchRuntime_extract_disjoint hpatch hps
 
 theorem patchRuntime_decode_disjoint_of_decode {template out : ByteArray}
@@ -732,14 +732,14 @@ theorem patchRuntime_size_eq {template out : ByteArray} {ps : List (Nat × ByteA
       unfold patchRuntime at hpatch
       simp only [List.foldlM_cons, Option.bind_eq_bind] at hpatch
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at hpatch
+      · rw [ite_eq_left hsz] at hpatch
         cases hsp : spliceBytes? template p.1 p.2 with
         | none =>
             simp [hsp] at hpatch
         | some mid =>
             simp [hsp] at hpatch
             rw [ih hpatch, spliceBytes_size_eq hsp]
-      · rw [if_neg hsz] at hpatch
+      · rw [ite_eq_right hsz] at hpatch
         simp at hpatch
 
 
@@ -778,7 +778,7 @@ theorem patchRuntime_eq_pref_append_aux (ps : List (Nat × ByteArray))
   | cons p ps ih =>
       simp only [List.foldlM_cons] at h
       by_cases hsz : p.2.size = 32
-      · rw [if_pos hsz] at h
+      · rw [ite_eq_left hsz] at h
         rcases hacc with ⟨rest, rfl⟩
         cases hsp : spliceBytes? (pref ++ rest) p.1 p.2 with
         | none => simp [hsp] at h
@@ -786,7 +786,7 @@ theorem patchRuntime_eq_pref_append_aux (ps : List (Nat × ByteArray))
             simp [hsp] at h
             exact ih (hacc := spliceBytes?_eq_pref_append hsp (hall p (by simp)))
               (hall := fun q hq => hall q (by simp [hq])) h
-      · rw [if_neg hsz] at h
+      · rw [ite_eq_right hsz] at h
         simp at h
 
 theorem patchRuntime_eq_pref_append {template out : ByteArray}
@@ -919,7 +919,7 @@ theorem patchRuntime_extract_eq_aux (ps : List (Nat × ByteArray))
   | cons p ps ih =>
       simp only [List.foldlM_cons] at h
       by_cases hszp : p.2.size = 32
-      · rw [if_pos hszp] at h
+      · rw [ite_eq_left hszp] at h
         cases hsp : spliceBytes? acc p.1 p.2 with
         | none => simp [hsp] at h
         | some acc' =>
@@ -933,7 +933,7 @@ theorem patchRuntime_extract_eq_aux (ps : List (Nat × ByteArray))
               rw [spliceBytes?_size_eq hsp, hsize]
             exact ih hacc' hsize'
               (fun q hq => hdisj q (List.mem_cons_of_mem p hq)) h
-      · rw [if_neg hszp] at h
+      · rw [ite_eq_right hszp] at h
         simp at h
 
 theorem patchRuntime_extract_eq {template out : ByteArray}
@@ -985,7 +985,7 @@ theorem patchRuntime_extract'_eq {template out : ByteArray}
   have hguard : (decide (start < 2 ^ 64) && decide (stop < 2 ^ 64)) = true := by
     rw [decide_eq_true hstart64, decide_eq_true hstop64]
     rfl
-  rw [if_pos hguard, if_pos hguard]
+  rw [ite_eq_left hguard, ite_eq_left hguard]
   exact patchRuntime_extract_eq hle hstop hdisj h
 
 theorem get?_eq_of_extract_one {a b : ByteArray} {idx : Nat}
@@ -993,7 +993,7 @@ theorem get?_eq_of_extract_one {a b : ByteArray} {idx : Nat}
     (h : a.extract idx (idx + 1) = b.extract idx (idx + 1)) :
     a.get? idx = b.get? idx := by
   unfold ByteArray.get?
-  simp only [dif_pos ha, dif_pos hb]
+  simp only [dite_eq_left ha, dite_eq_left hb]
   have hdata := congrArg ByteArray.data h
   have hlist := congrArg Array.toList hdata
   rw [ByteArray.data_extract, ByteArray.data_extract, Array.toList_extract,
@@ -1053,11 +1053,11 @@ theorem patchRuntime_parse_eq_of_disjoint {template out : ByteArray}
     rw [hget]
   · have hsize := patchRuntime_size_eq hpatch
     have hout : out.get? i = none := by
-      rw [ByteArray.get?, dif_neg]
+      rw [ByteArray.get?, dite_eq_right]
       rw [hsize]
       omega
     have htemplate : template.get? i = none := by
-      rw [ByteArray.get?, dif_neg]
+      rw [ByteArray.get?, dite_eq_right]
       omega
     rw [hout, htemplate]
 
@@ -1091,11 +1091,11 @@ theorem D_J_aux_contains_of_patchRuntime_preservesTarget {template out : ByteArr
       have hparse := patchRuntime_parse_eq_of_disjoint hpatch hpatchDisj
       rw [D_J_aux_eq_some out i result instr (by rw [hparse, htemplate])]
       by_cases htarget : instr = .JUMPDEST ∧ UInt256.ofNat i = target
-      · rw [if_pos htarget] at htail
+      · rw [ite_eq_left htarget] at htail
         rcases htarget with ⟨rfl, htarget⟩
         rw [← htarget]
         exact D_J_aux_contains_push_target
-      · rw [if_neg htarget] at htail
+      · rw [ite_eq_right htarget] at htail
         exact D_J_aux_contains_of_patchRuntime_preservesTarget hpatch hoffsets htail
 termination_by template.size - i
 decreasing_by
@@ -1119,7 +1119,7 @@ theorem spliceBytes_toByteArray_eq_writeWord (mem : ByteArray) (off : Nat)
     (w : UInt256) (h : off + 32 ≤ mem.size) :
     spliceBytes? mem off (UInt256.toByteArray w) = some (writeWord mem off w) := by
   unfold spliceBytes? Reasoning.Theory.writeWord
-  rw [toByteArray_size, if_pos h]
+  rw [toByteArray_size, ite_eq_left h]
   rw [write32_eq _ _ _ (by rw [toByteArray_size]) (by omega)]
   rw [toByteArray_extract_all]
 
@@ -1152,12 +1152,12 @@ theorem get?_eq_of_extract_one' (a b : ByteArray) (i : Nat) (ha : i < a.size) (h
     (h : a.extract i (i + 1) = b.extract i (i + 1)) :
     a.get? i = b.get? i := by
   unfold ByteArray.get?
-  simp only [dif_pos ha, dif_pos hb]
+  simp only [dite_eq_left ha, dite_eq_left hb]
   have h0 : (a.extract i (i + 1)).get? 0 = (b.extract i (i + 1)).get? 0 := by rw [h]
   unfold ByteArray.get? at h0
   have hsa : 0 < (a.extract i (i + 1)).size := by rw [ByteArray.size_extract]; omega
   have hsb : 0 < (b.extract i (i + 1)).size := by rw [ByteArray.size_extract]; omega
-  simp only [dif_pos hsa, dif_pos hsb] at h0
+  simp only [dite_eq_left hsa, dite_eq_left hsb] at h0
   have hla : (a.extract i (i + 1)).get 0 hsa = a.get i ha := by
     change (a.extract i (i + 1))[0] = a[i]
     simpa using ByteArray.get_extract (a := a) (start := i) (stop := i + 1) (i := 0) hsa

@@ -250,8 +250,8 @@ theorem writeWord_sparse_eq (mem : ByteArray) (off : Nat) (word : UInt256)
     ByteArray_zeroes_size _
   apply ByteArray.ext
   unfold Reasoning.Theory.writeWord ByteArray.write
-  rw [if_neg (by decide : ¬ ((32 : Nat) = 0)),
-    if_neg (show ¬ (0 ≥ word.toByteArray.size) from by rw [toByteArray_size]; omega)]
+  rw [ite_eq_right (by decide : ¬ ((32 : Nat) = 0)),
+    ite_eq_right (show ¬ (0 ≥ word.toByteArray.size) from by rw [toByteArray_size]; omega)]
   simp only [ByteArray.data_copySlice, ByteArray.data_append]
   have hdsz : (mem.data ++ (ByteArray.zeroes (off - mem.size)).data).size = off := by
     rw [Array.size_append, hpz]

@@ -63,7 +63,7 @@ theorem umin_ofNat_right_toNat_of_ge {c n : ℕ}
     (hc : c < UInt256.size) (hlo : c ≤ n) (hhi : n < UInt256.size) :
     (min (UInt256.ofNat c) (UInt256.ofNat n)).toNat = c := by
   show (if UInt256.ofNat c ≤ UInt256.ofNat n then UInt256.ofNat c else UInt256.ofNat n).toNat = c
-  rw [if_pos]
+  rw [ite_eq_left]
   · exact ulit_toNat' c hc
   · show (UInt256.ofNat c).toNat ≤ (UInt256.ofNat n).toNat
     rw [ulit_toNat' c hc, ulit_toNat' n hhi]
@@ -73,7 +73,7 @@ theorem umin_ofNat_right_toNat_of_lt {c n : ℕ}
     (hc : c < UInt256.size) (hn : n < c) (hhi : n < UInt256.size) :
     (min (UInt256.ofNat c) (UInt256.ofNat n)).toNat = n := by
   show (if UInt256.ofNat c ≤ UInt256.ofNat n then UInt256.ofNat c else UInt256.ofNat n).toNat = n
-  rw [if_neg]
+  rw [ite_eq_right]
   · exact ulit_toNat' n hhi
   · show ¬ (UInt256.ofNat c).toNat ≤ (UInt256.ofNat n).toNat
     rw [ulit_toNat' c hc, ulit_toNat' n hhi]
@@ -595,7 +595,7 @@ theorem shiftLeft5_ofNat_eq {n : Nat} (h : 32 * n < UInt256.size) :
     UInt256.shiftLeft (UInt256.ofNat n) ⟨5⟩ = UInt256.ofNat (32 * n) := by
   apply u256_inj
   unfold UInt256.shiftLeft
-  rw [if_neg (by decide : ¬ ((⟨5⟩ : UInt256).val ≥ 256))]
+  rw [ite_eq_right (by decide : ¬ ((⟨5⟩ : UInt256).val ≥ 256))]
   change (((UInt256.ofNat n).val.val <<< (⟨5⟩ : UInt256).val.val) % UInt256.size) =
     (UInt256.ofNat (32 * n)).val.val
   rw [show (⟨5⟩ : UInt256).val.val = 5 by decide]
@@ -624,7 +624,7 @@ theorem slt_zero_low_high {a b : UInt256}
     (ha : a.toNat < 2 ^ 255) (hb : 2 ^ 255 ≤ b.toNat) :
     UInt256.slt a b = ⟨0⟩ := by
   unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
-  rw [if_neg (by omega : ¬ a.toNat ≥ 2 ^ 255), if_pos hb]
+  rw [ite_eq_right (by omega : ¬ a.toNat ≥ 2 ^ 255), ite_eq_left hb]
   rfl
 
 /-- `SLT` is boolean-valued, so if it is not `1` then it is `0`. -/
@@ -632,41 +632,41 @@ theorem uslt_eq_zero_of_ne_one {a b : UInt256}
     (h : ¬ UInt256.slt a b = ⟨1⟩) : UInt256.slt a b = ⟨0⟩ := by
   unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
   by_cases ha : a.toNat ≥ 2 ^ 255
-  · rw [if_pos ha]
+  · rw [ite_eq_left ha]
     by_cases hb : b.toNat ≥ 2 ^ 255
-    · rw [if_pos hb]
+    · rw [ite_eq_left hb]
       by_cases hab : a < b
       · exfalso
         apply h
         unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
-        rw [if_pos ha, if_pos hb, if_pos (decide_eq_true hab)]
+        rw [ite_eq_left ha, ite_eq_left hb, ite_eq_left (decide_eq_true hab)]
         native_decide
       · have hdf : ¬ decide (a < b) = true := by
           rw [decide_eq_false hab]
           decide
-        rw [if_neg hdf]
+        rw [ite_eq_right hdf]
         native_decide
-    · rw [if_neg hb]
+    · rw [ite_eq_right hb]
       exfalso
       apply h
       unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
-      rw [if_pos ha, if_neg hb]
+      rw [ite_eq_left ha, ite_eq_right hb]
       native_decide
-  · rw [if_neg ha]
+  · rw [ite_eq_right ha]
     by_cases hb : b.toNat ≥ 2 ^ 255
-    · rw [if_pos hb]
+    · rw [ite_eq_left hb]
       native_decide
-    · rw [if_neg hb]
+    · rw [ite_eq_right hb]
       by_cases hab : a < b
       · exfalso
         apply h
         unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
-        rw [if_neg ha, if_neg hb, if_pos (decide_eq_true hab)]
+        rw [ite_eq_right ha, ite_eq_right hb, ite_eq_left (decide_eq_true hab)]
         native_decide
       · have hdf : ¬ decide (a < b) = true := by
           rw [decide_eq_false hab]
           decide
-        rw [if_neg hdf]
+        rw [ite_eq_right hdf]
         native_decide
 
 /-- `SLT a m = 0` when both words are non-negative and `a ≥ m`. -/
@@ -676,8 +676,8 @@ theorem slt_lit_zero {a : UInt256} {m : ℕ}
   have hmNat : (UInt256.ofNat m).toNat = m := ulit_toNat' m (lt_size_of_lt_sign hm)
   have hbool : UInt256.sltBool a (UInt256.ofNat m) = false := by
     unfold UInt256.sltBool
-    rw [if_neg (show ¬ a.toNat ≥ 2 ^ 255 by omega),
-        if_neg (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
+    rw [ite_eq_right (show ¬ a.toNat ≥ 2 ^ 255 by omega),
+        ite_eq_right (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
     exact decide_eq_false (show ¬ a < UInt256.ofNat m by
       show ¬ a.toNat < (UInt256.ofNat m).toNat
       rw [hmNat]
@@ -693,8 +693,8 @@ theorem slt_lit_one_low {a : UInt256} {m : ℕ}
   have hmNat : (UInt256.ofNat m).toNat = m := ulit_toNat' m (lt_size_of_lt_sign hm)
   have hbool : UInt256.sltBool a (UInt256.ofNat m) = true := by
     unfold UInt256.sltBool
-    rw [if_neg (show ¬ a.toNat ≥ 2 ^ 255 by omega),
-        if_neg (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
+    rw [ite_eq_right (show ¬ a.toNat ≥ 2 ^ 255 by omega),
+        ite_eq_right (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
     exact decide_eq_true (show a < UInt256.ofNat m by
       show a.toNat < (UInt256.ofNat m).toNat
       rw [hmNat]
@@ -710,8 +710,8 @@ theorem sgt_lit_one {a : UInt256} {m : ℕ}
   have hmNat : (UInt256.ofNat m).toNat = m := ulit_toNat' m (lt_size_of_lt_sign hm)
   have hbool : UInt256.sgtBool a (UInt256.ofNat m) = true := by
     unfold UInt256.sgtBool
-    rw [if_neg (show ¬ a.toNat ≥ 2 ^ 255 by omega),
-        if_neg (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
+    rw [ite_eq_right (show ¬ a.toNat ≥ 2 ^ 255 by omega),
+        ite_eq_right (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
     exact decide_eq_true (show a > UInt256.ofNat m by
       show (UInt256.ofNat m).toNat < a.toNat
       rw [hmNat]
@@ -727,8 +727,8 @@ theorem slt_lit_one_high {a : UInt256} {m : ℕ}
   have hmNat : (UInt256.ofNat m).toNat = m := ulit_toNat' m (lt_size_of_lt_sign hm)
   have hbool : UInt256.sltBool a (UInt256.ofNat m) = true := by
     unfold UInt256.sltBool
-    rw [if_pos (show a.toNat ≥ 2 ^ 255 by omega),
-        if_neg (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
+    rw [ite_eq_left (show a.toNat ≥ 2 ^ 255 by omega),
+        ite_eq_right (show ¬ (UInt256.ofNat m).toNat ≥ 2 ^ 255 by rw [hmNat]; omega)]
   show UInt256.fromBool (UInt256.sltBool a (UInt256.ofNat m)) = ⟨1⟩
   rw [hbool]
   rfl
@@ -889,7 +889,7 @@ theorem ushl5_ofNat_toNat (n : ℕ) (hn : n < 2 ^ 251) :
     (UInt256.shiftLeft (UInt256.ofNat n) ⟨5⟩).toNat = 32 * n := by
   have hofn : ((UInt256.ofNat n) : UInt256).toNat = n := ulit_toNat' n (lt_trans hn (by decide))
   unfold UInt256.shiftLeft
-  rw [if_neg (by decide : ¬ ((⟨5⟩ : UInt256).val ≥ 256))]
+  rw [ite_eq_right (by decide : ¬ ((⟨5⟩ : UInt256).val ≥ 256))]
   show (Fin.shiftLeft (UInt256.ofNat n).val (⟨5⟩ : UInt256).val).val = 32 * n
   unfold Fin.shiftLeft
   show ((UInt256.ofNat n).toNat <<< (5 : ℕ)) % UInt256.size = 32 * n

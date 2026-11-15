@@ -71,9 +71,9 @@ theorem normalizeInt_sint256_word (w : EVM.Word) :
   · rw [show 256 - 1 = 255 by omega]
     split
     · rename_i hsign
-      rw [if_pos (Int.ofNat_lt.mp hsign)]
+      rw [ite_eq_left (Int.ofNat_lt.mp hsign)]
     · rename_i hsign
-      rw [if_neg (fun h => hsign (Int.ofNat_lt.mpr h))]
+      rw [ite_eq_right (fun h => hsign (Int.ofNat_lt.mpr h))]
       rw [show EVM.wordModulus = EVM.twoPow 256 by rfl]
   · exact Int.natCast_nonneg _
   · apply Int.ofNat_lt.mpr
@@ -83,7 +83,7 @@ theorem normalizeInt_sint256_word (w : EVM.Word) :
 theorem normalizeInt_sint256_word_of_lt (w : EVM.Word)
     (hbound : w.toNat < EVM.twoPow 255) :
     normalizeInt (.sint ⟨256, by decide⟩) (Int.ofNat w.toNat) = Int.ofNat w.toNat := by
-  rw [normalizeInt_sint256_word, if_pos hbound]
+  rw [normalizeInt_sint256_word, ite_eq_left hbound]
 
 /-- Explicit signed-256 casts around mathematical negation agree with EVM
 two's-complement negation, including the signed-minimum boundary. -/
@@ -112,27 +112,27 @@ theorem normalizeInt_sint256_neg_word_of_le (w : EVM.Word)
   · have hinner : normalizeInt (.sint ⟨256, by decide⟩) n = n := by
       simp only [normalizeInt]
       rw [Int.emod_eq_of_lt hnnonneg hnltmod]
-      rw [if_pos hnlt]
+      rw [ite_eq_left hnlt]
     change normalizeInt (.sint ⟨256, by decide⟩)
         (-normalizeInt (.sint ⟨256, by decide⟩) n) = -n
     rw [hinner]
     by_cases hnzero : n = 0
     · rw [hnzero]
       simp only [neg_zero, normalizeInt, Int.zero_emod]
-      rw [if_pos]
+      rw [ite_eq_left]
       exact Int.natCast_pos.mpr (by simp [EVM.twoPow])
     · simp only [normalizeInt]
       rw [show 256 - 1 = 255 by omega]
       rw [Int.emod_eq_add_self_emod]
       rw [Int.emod_eq_of_lt]
-      · rw [if_neg] <;> omega
+      · rw [ite_eq_right] <;> omega
       · omega
       · omega
   · have hne : n = half := by omega
     have hinner : normalizeInt (.sint ⟨256, by decide⟩) n = -half := by
       simp only [normalizeInt]
       rw [Int.emod_eq_of_lt hnnonneg hnltmod]
-      rw [if_neg hnlt]
+      rw [ite_eq_right hnlt]
       omega
     change normalizeInt (.sint ⟨256, by decide⟩)
         (-normalizeInt (.sint ⟨256, by decide⟩) n) = -n
@@ -142,7 +142,7 @@ theorem normalizeInt_sint256_neg_word_of_le (w : EVM.Word)
     simp only [normalizeInt]
     rw [show 256 - 1 = 255 by omega]
     rw [Int.emod_eq_of_lt]
-    · rw [if_neg] <;> omega
+    · rw [ite_eq_right] <;> omega
     · omega
     · omega
 

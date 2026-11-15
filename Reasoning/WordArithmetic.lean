@@ -88,8 +88,8 @@ theorem wordOfInt_neg_natCast_eq_sub_zero (x : UInt256) :
     have hAbs : (-(Int.ofNat x.toNat)).natAbs = x.toNat := by
       show (-(x.toNat : ℤ)).natAbs = x.toNat; simp
     unfold EVM.wordOfInt
-    rw [if_pos hneg, hAbs, show EVM.wordModulus = UInt256.size from rfl, Nat.mod_eq_of_lt hlt,
-      if_neg (by omega : ¬ x.toNat = 0),
+    rw [ite_eq_left hneg, hAbs, show EVM.wordModulus = UInt256.size from rfl, Nat.mod_eq_of_lt hlt,
+      ite_eq_right (by omega : ¬ x.toNat = 0),
       show EVM.word (UInt256.size - x.toNat) = UInt256.ofNat (UInt256.size - x.toNat) from rfl,
       ulit_toNat' (UInt256.size - x.toNat) (by omega)]
     omega
@@ -221,7 +221,7 @@ theorem shiftLeft96_toNat_of_lt_160 (w : UInt256)
       show (2 : Nat) ^ (256 : Nat) = 2 ^ (160 : Nat) * 2 ^ (96 : Nat) by
         norm_num [← Nat.pow_add]]
   unfold UInt256.shiftLeft
-  rw [if_neg (by decide : ¬ (⟨96⟩ : UInt256).val ≥ 256)]
+  rw [ite_eq_right (by decide : ¬ (⟨96⟩ : UInt256).val ≥ 256)]
   unfold UInt256.toNat
   rw [Fin.shiftLeft_val]
   rw [show (⟨96⟩ : UInt256).val.val = 96 by decide]
@@ -262,7 +262,7 @@ theorem ctorAddressHighShiftDecode (a : AccountAddress) :
     exact a.isLt
   have hshift := shiftLeft96_toNat_of_lt_160 (EVM.word a.val) hlt
   unfold UInt256.shiftRight
-  rw [if_neg (by decide : ¬ (⟨96⟩ : UInt256).val ≥ 256)]
+  rw [ite_eq_right (by decide : ¬ (⟨96⟩ : UInt256).val ≥ 256)]
   unfold UInt256.toNat
   rw [Fin.shiftRight_val]
   change (UInt256.shiftLeft (EVM.word a.val) ⟨96⟩).toNat >>> 96 =
@@ -492,7 +492,7 @@ theorem ctorMin32_toNat_of_lt {n : ℕ} (h : n < 32) :
   have hnsize : n < UInt256.size := by
     have h32 : 32 < UInt256.size := by norm_num [UInt256.size]
     omega
-  rw [if_neg, ulit_toNat' n hnsize]
+  rw [ite_eq_right, ulit_toNat' n hnsize]
   · show ¬ (32 : ℕ) ≤ (UInt256.ofNat n).val.val
     rw [show (UInt256.ofNat n).val.val = (UInt256.ofNat n).toNat from rfl,
       ulit_toNat' n hnsize]
@@ -503,7 +503,7 @@ theorem ctorMin32_toNat_of_ge {n : ℕ}
     (min (⟨32⟩ : UInt256) (UInt256.ofNat n)).toNat = 32 := by
   show (if (⟨32⟩ : UInt256) ≤ UInt256.ofNat n then (⟨32⟩ : UInt256)
     else UInt256.ofNat n).toNat = 32
-  rw [if_pos]
+  rw [ite_eq_left]
   · rfl
   · show (32 : ℕ) ≤ (UInt256.ofNat n).toNat
     rw [ulit_toNat' n hsize]
@@ -592,7 +592,7 @@ theorem wordOfInt_sub_toUInt256 (x y : UInt256) :
     rw [EVM.wordOfInt]
     have hwordMod : EVM.wordModulus = UInt256.size := by decide
     have hneg : (x.toNat : Int) - (y.toNat : Int) < 0 := by omega
-    rw [if_pos hneg]
+    rw [ite_eq_left hneg]
     have hnatAbs :
         Int.natAbs ((x.toNat : Int) - (y.toNat : Int)) = y.toNat - x.toNat := by
       omega
@@ -603,7 +603,7 @@ theorem wordOfInt_sub_toUInt256 (x y : UInt256) :
       have hy : y.toNat < UInt256.size := y.val.isLt
       omega
     have hdiffNe : y.toNat - x.toNat ≠ 0 := by omega
-    rw [hnatAbs, hdiffMod, if_neg hdiffNe]
+    rw [hnatAbs, hdiffMod, ite_eq_right hdiffNe]
     apply u256_inj
     rw [usub_toNat_underflow (a := x) (b := y) hlt]
     have hword :
@@ -653,7 +653,7 @@ theorem addressWord_shiftLeft96_shiftRight96 (addr : AccountAddress) :
     exact addr.isLt
   have hshift := shiftLeft96_toNat_of_lt_160 (EVM.word addr.val) hlt160
   unfold UInt256.shiftRight
-  rw [if_neg (by decide : ¬ ((⟨96⟩ : UInt256).val ≥ 256))]
+  rw [ite_eq_right (by decide : ¬ ((⟨96⟩ : UInt256).val ≥ 256))]
   unfold UInt256.toNat
   rw [Fin.shiftRight_val]
   change (UInt256.shiftLeft (EVM.word addr.val) ⟨96⟩).toNat >>> (96 : Nat) =
@@ -717,8 +717,8 @@ theorem wordOfInt_toNat_of_neg_of_abs_lt (i : Int) (hneg : i < 0)
     omega
   have hpos : 0 < i.natAbs := Nat.pos_of_ne_zero hdiffPos
   unfold EVM.wordOfInt
-  rw [if_pos hneg]
-  rw [Nat.mod_eq_of_lt hle, if_neg hdiffPos]
+  rw [ite_eq_left hneg]
+  rw [Nat.mod_eq_of_lt hle, ite_eq_right hdiffPos]
   change (UInt256.ofNat (EVM.wordModulus - i.natAbs)).toNat = UInt256.size - i.natAbs
   rw [ulit_toNat']
   · rw [show EVM.wordModulus = UInt256.size by decide]
@@ -801,7 +801,7 @@ theorem rpow_div_two_toNat_le_pred {n : UInt256} {v : ℕ}
 theorem rpowShiftRight128_toNat (x : UInt256) :
     (UInt256.shiftRight x (⟨128⟩ : UInt256)).toNat = x.toNat / 2 ^ 128 := by
   unfold UInt256.shiftRight UInt256.toNat
-  rw [if_neg]
+  rw [ite_eq_right]
   · change (x.val >>> (⟨128⟩ : UInt256).val).val = x.val.val / 2 ^ 128
     rw [Fin.shiftRight_val]
     rw [Nat.shiftRight_eq_div_pow]
@@ -1224,8 +1224,8 @@ theorem u256_sdiv_high_low
     UInt256.sdiv prod rate =
       { val := (UInt256.div (UInt256.abs prod) rate).val * (-1 : Fin UInt256.size) } := by
   unfold UInt256.sdiv
-  rw [if_pos (by simpa [EVM.twoPow] using hprodHigh)]
-  rw [if_neg (by simpa [EVM.twoPow] using not_le.mpr hrateLow)]
+  rw [ite_eq_left (by simpa [EVM.twoPow] using hprodHigh)]
+  rw [ite_eq_right (by simpa [EVM.twoPow] using not_le.mpr hrateLow)]
   rfl
 
 theorem u256_div_toNat_eq_of_toNat {a b z : UInt256} {denom : Nat}
@@ -1260,7 +1260,7 @@ theorem u256_size_eq_two_sign :
 theorem fin_uint256_neg_one_val :
     ((-1 : Fin UInt256.size).val) = UInt256.size - 1 := by
   rw [Fin.val_neg]
-  rw [if_neg]
+  rw [ite_eq_right]
   · rfl
   · intro hbad
     have hval := congrArg Fin.val hbad
@@ -1324,7 +1324,7 @@ theorem u256_abs_high_toNat {w : UInt256}
       change (UInt256.abs { val := val }).toNat = UInt256.size - val.val
       unfold UInt256.abs
       simp only [UInt256.toNat] at hhi hpos ⊢
-      rw [if_pos hhi]
+      rw [ite_eq_left hhi]
       change (val * (-1 : Fin UInt256.size)).val = UInt256.size - val.val
       exact fin_uint256_mul_neg_one_val (w := { val := val }) hpos
 
@@ -1386,8 +1386,8 @@ theorem u256_slt_zero_ne_zero_of_high {w : UInt256}
     simpa [EVM.twoPow, UInt256.toNat] using hhi
   unfold UInt256.slt UInt256.sltBool UInt256.fromBool Bool.toUInt256
   simp only [UInt256.toNat]
-  rw [if_pos hcond]
-  rw [if_neg (by decide : ¬ ((0 : Fin UInt256.size).val ≥ 2 ^ 255))]
+  rw [ite_eq_left hcond]
+  rw [ite_eq_right (by decide : ¬ ((0 : Fin UInt256.size).val ≥ 2 ^ 255))]
   decide
 
 theorem u256_abs_div_eq_bound_to_sign {rate prod art : UInt256} {rabs : Nat}
@@ -1436,7 +1436,7 @@ theorem int_eq_signed_word_of_range_mod {i : Int} {w : UInt256}
         norm_num [EVM.twoPow]
       rw [hpow]
       simpa [hi] using hhi
-    rw [if_pos hlow]
+    rw [ite_eq_left hlow]
   · have hneg : i < 0 := not_le.mp hnonneg
     have hshiftNonneg : 0 ≤ i + Int.ofNat EVM.wordModulus := by
       have hloM : -Int.ofNat EVM.wordModulus < i := by
@@ -1465,7 +1465,7 @@ theorem int_eq_signed_word_of_range_mod {i : Int} {w : UInt256}
         rw [hM]
         omega
       omega
-    rw [if_neg hhigh]
+    rw [ite_eq_right hhigh]
     omega
 
 theorem int_nonneg_of_word_slt_zero
@@ -1565,7 +1565,7 @@ theorem sgt_zero_ne_zero_to_pos (w : UInt256)
         simpa [EVM.twoPow] using le_of_not_gt hlow
       have hzeroLow : ¬ (UInt256.ofNat 0).toNat ≥ 2 ^ 255 := by
         decide
-      rw [if_pos hhi, if_neg hzeroLow]
+      rw [ite_eq_left hhi, ite_eq_right hzeroLow]
       rfl
     exact False.elim (h (by simpa using hsgt0))
 
@@ -2112,8 +2112,8 @@ theorem wordOfInt_sub_natCasts (a b : UInt256) :
       have hlt : Int.ofNat a.toNat < Int.ofNat b.toNat := Int.ofNat_lt.mpr h'
       linarith
     apply u256_inj
-    rw [usub_toNat_underflow h', EVM.wordOfInt, if_pos hneg, hcast]
-    simp only [Int.natAbs_neg, Int.natAbs_ofNat', Nat.mod_eq_of_lt hlt', if_neg hd]
+    rw [usub_toNat_underflow h', EVM.wordOfInt, ite_eq_left hneg, hcast]
+    simp only [Int.natAbs_neg, Int.natAbs_ofNat', Nat.mod_eq_of_lt hlt', ite_eq_right hd]
     show (EVM.uintN 256 (EVM.wordModulus - (b.toNat - a.toNat))).val
       = UInt256.size + a.toNat - b.toNat
     show (EVM.wordModulus - (b.toNat - a.toNat)) % EVM.twoPow 256
@@ -2415,7 +2415,7 @@ theorem checkedAddOverflowGt (a b : UInt256)
 
 /-- `wordOfInt (Int.ofNat k) = ofNat k` (a nonnegative literal round-trips through `ℤ`). -/
 theorem wordOfInt_ofNat_eq (k : ℕ) : EVM.wordOfInt (Int.ofNat k) = UInt256.ofNat k := by
-  rw [EVM.wordOfInt, if_neg (by simp)]; apply u256_inj
+  rw [EVM.wordOfInt, ite_eq_right (by simp)]; apply u256_inj
   show (Int.ofNat k).toNat % EVM.twoPow 256 = (UInt256.ofNat k).toNat
   rw [show (Int.ofNat k).toNat = k from rfl, show (UInt256.ofNat k).toNat = k % UInt256.size from
     rfl,
@@ -2427,7 +2427,7 @@ theorem ofNat_toNat_lt (n : ℕ) (h : n < UInt256.size) : (UInt256.ofNat n).toNa
 theorem u256_min32_ofNat_toNat_of_ge32 (n : ℕ) (h1 : 32 ≤ n) (h2 : n < UInt256.size) :
     (min (⟨32⟩:UInt256) (UInt256.ofNat n)).toNat = 32 := by
   show (if (⟨32⟩:UInt256) ≤ UInt256.ofNat n then (⟨32⟩:UInt256) else UInt256.ofNat n).toNat = 32
-  rw [if_pos (show (⟨32⟩:UInt256) ≤ UInt256.ofNat n from ?_)]
+  rw [ite_eq_left (show (⟨32⟩:UInt256) ≤ UInt256.ofNat n from ?_)]
   · rfl
   · show (32:ℕ) ≤ (UInt256.ofNat n).val.val
     rw [show (UInt256.ofNat n).val.val = (UInt256.ofNat n).toNat from rfl,
@@ -2439,7 +2439,7 @@ theorem u256_min32_ofNat_toNat_of_lt32 (n : ℕ) (h : n < 32) :
   have hnsize : n < UInt256.size := by
     have h32 : 32 < UInt256.size := by norm_num [UInt256.size]
     omega
-  rw [if_neg (show ¬ (⟨32⟩:UInt256) ≤ UInt256.ofNat n from ?_), ofNat_toNat_lt n hnsize]
+  rw [ite_eq_right (show ¬ (⟨32⟩:UInt256) ≤ UInt256.ofNat n from ?_), ofNat_toNat_lt n hnsize]
   · show ¬ (32:ℕ) ≤ (UInt256.ofNat n).val.val
     rw [show (UInt256.ofNat n).val.val = (UInt256.ofNat n).toNat from rfl,
       ofNat_toNat_lt n (by omega)]; omega
@@ -2785,7 +2785,7 @@ theorem solidityBytesHeaderWord_long_flag {len : Nat}
   have hmod : (solidityBytesHeaderWord len).toNat % 2 = 1 := by
     have htoNat : (UInt256.ofNat (len * 2 + 1)).toNat = len * 2 + 1 := by
       exact ulit_toNat' (len * 2 + 1) hwordLt
-    rw [solidityBytesHeaderWord, if_neg hlong, htoNat]
+    rw [solidityBytesHeaderWord, ite_eq_right hlong, htoNat]
     omega
   intro hzero
   have hbit := uInt256_land_one_toNat (solidityBytesHeaderWord len)
@@ -2944,7 +2944,7 @@ theorem solidityBytesHeaderWord_eq_len_mul_two_add_one
     (hlenMax : len.toNat ≤ ABI.solcMaxU64) :
     solidityBytesHeaderWord n = len * (⟨2⟩ : UInt256) + ⟨1⟩ := by
   subst n
-  rw [solidityBytesHeaderWord, if_neg hlong]
+  rw [solidityBytesHeaderWord, ite_eq_right hlong]
   apply u256_inj
   rw [uadd_toNat]
   rw [umul_toNat (a := len) (b := (⟨2⟩ : UInt256)) (by
@@ -3392,7 +3392,7 @@ theorem shiftLeft1_ofNat_eq {n : Nat} (h : 2 * n < UInt256.size) :
     UInt256.shiftLeft (UInt256.ofNat n) ⟨1⟩ = UInt256.ofNat (2 * n) := by
   apply u256_inj
   unfold UInt256.shiftLeft
-  rw [if_neg (by decide : ¬ ((⟨1⟩ : UInt256).val ≥ 256))]
+  rw [ite_eq_right (by decide : ¬ ((⟨1⟩ : UInt256).val ≥ 256))]
   change (((UInt256.ofNat n).val.val <<< 1) % UInt256.size) = (UInt256.ofNat (2 * n)).val.val
   have hn : n < UInt256.size := by
     omega

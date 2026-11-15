@@ -71,7 +71,7 @@ theorem addrUintUintReturnEncoding (w chop dunk : UInt256) :
   simp only [bind, Option.bind]
   rw [show isDynamicABIType abiUInt256 = false by decide]
   unfold encodeABIValuesFrom?
-  simp only [Bool.false_eq_true, if_false, List.nil_append, List.append_nil]
+  simp only [Bool.false_eq_true, ite_false, List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
   simp [ByteArray.data_append, ByteArray.append_assoc]
@@ -108,7 +108,7 @@ theorem decodeABIValues_legacy_none_short {bytes : List UInt8}
     decodeABIValues? [abiBytes32, abiBool] bytes 0 0 64 64 DecodeMode.legacySolc05 =
       none := by
   simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiBool, isDynamicABIType,
-    Bool.false_eq_true, if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+    Bool.false_eq_true, ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have hnot : ¬ 32 ≤ bytes.length := by omega
     simp [decodeABIValue?, readBytes?, hnot]
@@ -251,7 +251,7 @@ theorem addressThreeUint256ReturnEncoding (clip chop hole dirt : UInt256) :
   simp only [bind, Option.bind]
   rw [show isDynamicABIType abiUInt256 = false by decide]
   unfold encodeABIValuesFrom?
-  simp only [Bool.false_eq_true, if_false, List.nil_append, List.append_nil]
+  simp only [Bool.false_eq_true, ite_false, List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
   simp [ByteArray.data_append]
@@ -274,8 +274,8 @@ theorem decode_legacyBytes32_address_ok {cd : ByteArray} {x y : Ident}
   have hword36 : ABI.bytesToWord ((cd.toList.drop 36).take 32) = calldataWord cd 36 :=
     decode_word_at_eq cd 36 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?, abiUInt256, abiAddress,
@@ -284,7 +284,7 @@ theorem decode_legacyBytes32_address_ok {cd : ByteArray} {x y : Ident}
   rw [decodeABIValues_bytes32_address_legacy_ok (bytes := cd.toList.drop 4)
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
   simp [decodeCalldata.insertValues]
   rw [hword36]
 
@@ -296,16 +296,16 @@ theorem decode_legacyBytes32_address_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?, abiUInt256, abiAddress,
       abiBytes32, abiBytes32Width, abiBool]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 64
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_address_legacy_none_short (bytes := cd.toList.drop 4) (by
       rw [List.length_drop, htlen]
       omega)]
@@ -324,7 +324,7 @@ theorem decode_legacyUint256_ok {cd : ByteArray} {x : Ident}
     decode_word_at_eq cd 4 (by omega) (by norm_num)
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x]) (types := [abiUInt256])
     (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   rw [decodeScalarWordWithMode_uint256_ok (mode := DecodeMode.legacySolc05)
     (bytes := cd.toList.drop 4) (start := 0) htake4]
@@ -342,7 +342,7 @@ theorem decode_legacyUint256_none_short {cd : ByteArray} {x : Ident}
     rfl
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x]) (types := [abiUInt256])
     (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   have htake0n : ¬ ((cd.toList.drop 4).take 32).length = 32 := by
     rw [List.length_take, List.length_drop, htlen]
@@ -369,8 +369,8 @@ theorem decode_legacyBytes32_uint256_ok {cd : ByteArray} {x y : Ident}
   have hword36 : ABI.bytesToWord ((cd.toList.drop 36).take 32) = calldataWord cd 36 :=
     decode_word_at_eq cd 36 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiBytes32Width, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiBytes32Width, abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiUInt256] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?, abiUInt256, abiAddress,
@@ -379,7 +379,7 @@ theorem decode_legacyBytes32_uint256_ok {cd : ByteArray} {x y : Ident}
   rw [decodeABIValues_bytes32_uint256_legacy_ok (bytes := cd.toList.drop 4)
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
   simp [decodeCalldata.insertValues]
   rw [hword36]
 
@@ -391,16 +391,16 @@ theorem decode_legacyBytes32_uint256_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiBytes32Width, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiBytes32Width, abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiUInt256] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?, abiUInt256, abiAddress,
       abiBytes32, abiBytes32Width, abiBool]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 64
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_uint256_legacy_none_short (bytes := cd.toList.drop 4) (by
       rw [List.length_drop, htlen]
       omega)]
@@ -506,7 +506,7 @@ theorem uint256PairReturnEncoding (first second : UInt256) :
   simp only [bind, Option.bind]
   rw [show isDynamicABIType abiUInt256 = false by decide]
   unfold encodeABIValuesFrom?
-  simp only [Bool.false_eq_true, if_false, List.nil_append, List.append_nil]
+  simp only [Bool.false_eq_true, ite_false, List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
   simp [ByteArray.data_append]
@@ -561,7 +561,7 @@ theorem addressUint256PairReturnEncoding (first second : UInt256) :
   simp only [bind, Option.bind]
   rw [show isDynamicABIType abiUInt256 = false by decide]
   unfold encodeABIValuesFrom?
-  simp only [Bool.false_eq_true, if_false, List.nil_append, List.append_nil]
+  simp only [Bool.false_eq_true, ite_false, List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
   simp [ByteArray.data_append]
@@ -584,15 +584,15 @@ theorem decodeCalldata_legacyBytes32_legacyAddress_ok {cd : ByteArray} {x y : St
   have hword36 : ABI.bytesToWord ((cd.toList.drop 36).take 32) = calldataWord cd 36 :=
     decode_word_at_eq cd 36 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType])]
   simp only
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?, abiUInt256, abiAddress,
       abiBytes32, abiBytes32Width, abiBool]]
   simp only [bind, Option.bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 64)]
   rw [decodeABIValues_bytes32_address_legacy_ok
     (bytes := cd.toList.drop 4)
@@ -647,7 +647,7 @@ theorem uint256FiveReturnEncoding (art rate spot line dust : UInt256) :
   simp only [bind, Option.bind]
   rw [show isDynamicABIType abiUInt256 = false by decide]
   unfold encodeABIValuesFrom?
-  simp only [Bool.false_eq_true, if_false, List.nil_append, List.append_nil]
+  simp only [Bool.false_eq_true, ite_false, List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
   simp [ByteArray.data_append]
@@ -681,7 +681,7 @@ theorem bytes32Uint256ReturnEncoding (name count : UInt256) :
   rw [toByteArray_eq_toBytesBE name, toByteArray_eq_toBytesBE count]
   simp only [encodeReturnValues?, encodeABIValues?, encodeABIValuesFrom?,
     hhead, hencName, hencCount, hdynBytes, hdynUint, bind, Option.bind, Bool.false_eq_true,
-      if_false,
+      ite_false,
     List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
@@ -716,7 +716,7 @@ theorem bytes32Uint256ReturnEncoding' (blinded deposit : UInt256) :
   rw [toByteArray_eq_toBytesBE blinded, toByteArray_eq_toBytesBE deposit]
   simp only [encodeReturnValues?, encodeABIValues?, encodeABIValuesFrom?,
     hhead, hencBlinded, hencDeposit, hdynBytes, hdynUint, bind, Option.bind,
-    Bool.false_eq_true, if_false,
+    Bool.false_eq_true, ite_false,
     List.nil_append, List.append_nil]
   apply congrArg some
   apply ByteArray.ext
@@ -735,7 +735,7 @@ theorem uint256PowerOfTwoReturnEncoding {N : ℕ} (hN : N < 256) :
   have hval : encodeABIValue? abiUInt256 (.int (Int.ofNat (2 ^ N)))
                 = some (EVM.Word.toBytesBE (UInt256.ofNat (2 ^ N))) := by
     simp only [abiUInt256, encodeABIValue?, encodeABIWord?]
-    rw [if_neg (by decide), if_pos ⟨Int.natCast_nonneg _, hlt⟩, evm_word_eq_ofNat]; rfl
+    rw [ite_eq_right (by decide), ite_eq_left ⟨Int.natCast_nonneg _, hlt⟩, evm_word_eq_ofNat]; rfl
   have hdyn : isDynamicABIType abiUInt256 = false := rfl
   have hhead : abiTupleHeadSize? [abiUInt256] = some 32 := by
     simp only [abiTupleHeadSize?, staticABIEncodedSize?, isDynamicABIType, abiUInt256, bind,
@@ -761,16 +761,16 @@ theorem decodeCalldata_string_some {cd : ByteArray} {x : Stele.Ident}
   unfold decodeCalldata
   have htlen : cd.toList.length = cd.size := by
     rw [byteArray_toList_eq, Array.length_toList]; rfl
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
-  rw [if_neg (by
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [List.length_drop, htlen] at hhuge
     omega)]
-  rw [if_neg (by
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -1360,7 +1360,7 @@ theorem decodeABIValue_legacy_bytes32_ok {bytes : List UInt8} {start : Nat}
         DecodeMode.legacySolc05 =
       some (.fixedBytes abiBytes32Width ((bytes.drop start).take 32), start + 32) := by
   simp only [abiBytes32Width, decodeABIValue?, readBytes?, bind, Option.bind]
-  rw [if_pos hlen]
+  rw [ite_eq_left hlen]
   have htake : List.take 32 ((bytes.drop start).take 32) = (bytes.drop start).take 32 :=
     List.take_of_length_le (by rw [hlen])
   simp [htake]
@@ -1403,7 +1403,7 @@ theorem decodeABIValues_legacy_ok {bytes : List UInt8}
         hlen32 hhas
     simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiBool, isDynamicABIType,
       Bool.false_eq_true,
-      if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+      ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
     simp only [abiBytes32, abiBytes32Width] at hbytes0
     simp only [abiBool] at hbool
     rw [hbytes0, hbool]
@@ -1416,7 +1416,7 @@ theorem decodeABIValues_legacy_ok {bytes : List UInt8}
         hlen32 hhas
     simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiBool, isDynamicABIType,
       Bool.false_eq_true,
-      if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+      ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
     simp only [abiBytes32, abiBytes32Width] at hbytes0
     simp only [abiBool] at hbool
     rw [hbytes0, hbool]
@@ -1554,7 +1554,7 @@ theorem readNat_drop4_eq_calldataWord_add {I : ExecutionEnv} {headOff : Nat}
   have hslice : (((I.calldata.toList.drop 4).drop headOff).take 32).length = 32 := by
     rw [List.length_take, List.length_drop, List.length_drop, htlen]
     omega
-  rw [if_pos hslice]
+  rw [ite_eq_left hslice]
   rw [calldataWord]
   rw [← decode_word_at_eq_any I.calldata (4 + headOff) h]
   simp [UInt256.toNat, List.drop_drop, Nat.add_comm]
@@ -1573,7 +1573,7 @@ theorem selector_toNat_readBytes4 (cd : ByteArray) :
     have := fromBytes'_le (bs := (ByteArray.readBytes cd 0 32).data.toList.reverse)
     rwa [List.length_reverse, hlen] at this
   unfold UInt256.shiftRight uInt256OfByteArray
-  rw [if_neg (by decide : ¬ ((⟨224⟩ : UInt256).val ≥ 256))]
+  rw [ite_eq_right (by decide : ¬ ((⟨224⟩ : UInt256).val ≥ 256))]
   show ((UInt256.ofNat _).val >>> (⟨224⟩ : UInt256).val).val = _
   rw [Fin.shiftRight_val]
   show (UInt256.ofNat _).val.val >>> (224 : ℕ) = _

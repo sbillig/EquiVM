@@ -60,8 +60,8 @@ theorem selectorDispatchMsg_eq_dispatchList (contract : ContractDecl) (cd : Byte
     rw [dispatchList_cons, selectorOf]
     by_cases hb : ((Ethereum.KEC (String.toByteArray (transitionSigStr t))).extract 0 4
         == cd.extract 0 4) = true
-    · rw [if_pos hb]; simp only [hb]
-    · rw [if_neg hb]; simp only [Bool.not_eq_true] at hb; simp only [hb]; exact ih
+    · rw [ite_eq_left hb]; simp only [hb]
+    · rw [ite_eq_right hb]; simp only [Bool.not_eq_true] at hb; simp only [hb]; exact ih
 
 /-- `dispatchMsg` agrees with its pure list form for contracts with no receive/fallback — the bridge
     that lets the single-selector lemmas (and any example's N-way dispatch) reason about
@@ -88,7 +88,7 @@ theorem dispatchList_none_short (ts : List TransitionDecl)
       have heq := byteArray_size_eq_of_beq hc
       rw [ByteArray.size_extract, hsz t (by simp)] at heq
       omega
-    rw [if_neg (by rw [hfalse]; simp)]
+    rw [ite_eq_right (by rw [hfalse]; simp)]
     exact ih (fun t' ht' => hsz t' (List.mem_cons_of_mem _ ht'))
 
 /-- A successful equality check against a 4-byte selector prefix implies calldata has at least
@@ -108,8 +108,8 @@ theorem dispatchList_some_mem {ts : List TransitionDecl} {cd : ByteArray} {t : T
   | cons head tail ih =>
       rw [dispatchList_cons] at h
       by_cases hb : (selectorOf head == cd.extract 0 4) = true
-      · rw [if_pos hb] at h; cases h; simp
-      · rw [if_neg hb] at h; exact List.mem_cons_of_mem head (ih h)
+      · rw [ite_eq_left hb] at h; cases h; simp
+      · rw [ite_eq_right hb] at h; exact List.mem_cons_of_mem head (ih h)
 
 /-- A transition returned by `dispatchList` matched the calldata prefix. -/
 theorem dispatchList_some_selIs {ts : List TransitionDecl} {cd : ByteArray} {t : TransitionDecl}
@@ -119,8 +119,8 @@ theorem dispatchList_some_selIs {ts : List TransitionDecl} {cd : ByteArray} {t :
   | cons head tail ih =>
       rw [dispatchList_cons] at h
       by_cases hb : (selectorOf head == cd.extract 0 4) = true
-      · rw [if_pos hb] at h; cases h; exact hb
-      · rw [if_neg hb] at h; exact ih h
+      · rw [ite_eq_left hb] at h; cases h; exact hb
+      · rw [ite_eq_right hb] at h; exact ih h
 
 /-- If **no** transition's selector matches the calldata prefix, dispatch yields nothing — the
     n-ary form of `dispatch_none_nomatch`. -/
@@ -130,11 +130,11 @@ theorem dispatchList_none_of_all_ne {ts : List TransitionDecl} {cd : ByteArray}
   induction ts with
   | nil => rfl
   | cons head tail ih =>
-      rw [dispatchList_cons, if_neg (by rw [h head (by simp)]; simp)]
+      rw [dispatchList_cons, ite_eq_right (by rw [h head (by simp)]; simp)]
       exact ih (fun t ht => h t (List.mem_cons_of_mem _ ht))
 
 /-- **First-match dispatch** (n-ary positive form): every transition before `ti` misses the
-    calldata prefix and `ti` hits it, so dispatch returns `ti`.  Subsumes the `dispatch_eq`/`if_pos`
+    calldata prefix and `ti` hits it, so dispatch returns `ti`.  Subsumes the `dispatch_eq`/`ite_eq_left`
     positive case (`pre = []`) and the per-arm `dispatchList_cons` folds. -/
 theorem dispatchList_eq_some_of_split {pre post : List TransitionDecl} {ti : TransitionDecl}
     {cd : ByteArray}
@@ -142,9 +142,9 @@ theorem dispatchList_eq_some_of_split {pre post : List TransitionDecl} {ti : Tra
     (hhit : (selectorOf ti == cd.extract 0 4) = true) :
     dispatchList (pre ++ ti :: post) cd = some ti := by
   induction pre with
-  | nil => rw [List.nil_append, dispatchList_cons, if_pos hhit]
+  | nil => rw [List.nil_append, dispatchList_cons, ite_eq_left hhit]
   | cons head tail ih =>
-      rw [List.cons_append, dispatchList_cons, if_neg (by rw [hpre head (by simp)]; simp)]
+      rw [List.cons_append, dispatchList_cons, ite_eq_right (by rw [hpre head (by simp)]; simp)]
       exact ih (fun t ht => hpre t (List.mem_cons_of_mem _ ht))
 
 /-- `dispatchMsg` no-match, n-ary: no transition selector matches ⇒ no dispatch. -/
@@ -192,10 +192,10 @@ theorem dispatch_unique
   rw [selectorDispatchMsg_eq_dispatchList contract cd, htr, dispatchList_cons, dispatchList_nil]
     at hsel
   by_cases hb : (selectorOf transition == cd.extract 0 4) = true
-  · rw [if_pos hb] at hsel
+  · rw [ite_eq_left hb] at hsel
     cases hsel
     rfl
-  · rw [if_neg hb] at hsel
+  · rw [ite_eq_right hb] at hsel
     simp at hsel
 
 /-- Calldata shorter than the 4-byte selector cannot dispatch. -/

@@ -40,7 +40,7 @@ theorem decodeCalldata_legacyUInt256_ok {cd : ByteArray} {x : Stele.Ident}
     decode_word_at_eq cd 4 (by omega) (by norm_num)
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x]) (types := [abiUInt256])
     (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   rw [decodeScalarWordWithMode_uint256_ok (mode := DecodeMode.legacySolc05)
     (bytes := cd.toList.drop 4) (start := 0) htake4]
@@ -58,7 +58,7 @@ theorem decodeCalldata_legacyUInt256_none_short {cd : ByteArray} {x : Stele.Iden
     rfl
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x]) (types := [abiUInt256])
     (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   have htake0n : ¬ ((cd.toList.drop 4).take 32).length = 32 := by
     rw [List.length_take, List.length_drop, htlen]
@@ -104,7 +104,7 @@ theorem decodeABIValues_uint256_uint256_legacy_none_short {bytes : List UInt8}
     (hshort : bytes.length < 64) :
     decodeABIValues? [abiUInt256, abiUInt256] bytes 0 0 64 64 DecodeMode.legacySolc05 =
       none := by
-  simp only [decodeABIValues?, abiUInt256, isDynamicABIType, Bool.false_eq_true, if_false,
+  simp only [decodeABIValues?, abiUInt256, isDynamicABIType, Bool.false_eq_true, ite_false,
     staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have hnot : ¬ 32 ≤ bytes.length := by omega
@@ -136,8 +136,8 @@ theorem decodeCalldata_legacyUInt256_uint256_ok {cd : ByteArray}
   have hword36 : ABI.bytesToWord ((cd.toList.drop 36).take 32) = calldataWord cd 36 :=
     decode_word_at_eq cd 36 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiUInt256, abiUInt256] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
@@ -146,7 +146,7 @@ theorem decodeCalldata_legacyUInt256_uint256_ok {cd : ByteArray}
   rw [decodeABIValues_uint256_uint256_legacy_ok (bytes := cd.toList.drop 4)
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 64)]
   simp [decodeCalldata.insertValues]
   rw [hword4, hword36]
@@ -159,16 +159,16 @@ theorem decodeCalldata_legacyUInt256_uint256_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiUInt256, abiUInt256] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 64
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_uint256_uint256_legacy_none_short
       (bytes := cd.toList.drop 4) (by
         rw [List.length_drop, htlen]
@@ -205,7 +205,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_ok {cd : ByteArray}
       using decode_word_at_eq cd 68 (by omega) (by norm_num)
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x, y, z])
     (types := [abiUInt256, abiUInt256, abiUInt256]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   rw [decodeScalarWordWithMode_uint256_ok (mode := DecodeMode.legacySolc05)
     (bytes := cd.toList.drop 4) (start := 0) htake4]
@@ -233,7 +233,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_none_short {cd : ByteArray}
     rfl
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x, y, z])
     (types := [abiUInt256, abiUInt256, abiUInt256]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
   by_cases hlen0 : 32 ≤ (cd.toList.drop 4).length
   · have htake0 : ((cd.toList.drop 4).take 32).length = 32 := by
       rw [List.length_take]
@@ -321,7 +321,7 @@ theorem decodeScalarWordWithMode_legacy_uint8_ok {bytes : List UInt8} {start : N
         EVM.twoPow 8)), start + 32) := by
   simp only [abiUInt8Int, decodeScalarWordWithMode?, readWord?, readBytes?, decodeABIWord?, bind,
     Option.bind]
-  rw [if_pos hlen]
+  rw [ite_eq_left hlen]
   rfl
 
 theorem decodeScalarWordWithMode_legacy_uint48_ok {bytes : List UInt8} {start : Nat}
@@ -331,7 +331,7 @@ theorem decodeScalarWordWithMode_legacy_uint48_ok {bytes : List UInt8} {start : 
         EVM.twoPow 48)), start + 32) := by
   simp only [abiUInt48, abiUInt48Int, decodeScalarWordWithMode?, readWord?, readBytes?, bind,
     Option.bind]
-  rw [if_pos hlen]
+  rw [ite_eq_left hlen]
   simp [decodeABIWord?, UInt256.toNat, normalizeInt]
 
 theorem decodeScalarWordWithMode_legacy_uint96_ok {bytes : List UInt8} {start : Nat}
@@ -341,7 +341,7 @@ theorem decodeScalarWordWithMode_legacy_uint96_ok {bytes : List UInt8} {start : 
         EVM.twoPow 96)), start + 32) := by
   simp only [abiUInt96, abiUInt96Int, decodeScalarWordWithMode?, readWord?, readBytes?, bind,
     Option.bind]
-  rw [if_pos hlen]
+  rw [ite_eq_left hlen]
   simp [decodeABIWord?, UInt256.toNat, normalizeInt]
 
 theorem decodeScalarWordWithMode_legacyInt256_ok {bytes : List UInt8} {start : Nat}
@@ -434,7 +434,7 @@ theorem decodeReturnValues_uint256_ok {returndata : ByteArray}
   have hword := bytesToWord_take32_eq_extract0_32 (returndata := returndata)
   rw [decodeReturnValues_scalarWords_eq (types := [abiUInt256]) (returndata := returndata)
     (by decide)]
-  rw [if_neg (by
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [hlen] at hhuge
     omega)]
@@ -448,7 +448,7 @@ theorem decodeReturnValues_uint256_none_short {returndata : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]; rfl
   rw [decodeReturnValues_scalarWords_eq (types := [abiUInt256]) (returndata := returndata)
     (by decide)]
-  rw [if_neg (by
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [hlen] at hhuge
     omega)]
@@ -461,7 +461,7 @@ theorem decodeReturnValues_uint256_none_huge {returndata : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]; rfl
   rw [decodeReturnValues_scalarWords_eq (types := [abiUInt256]) (returndata := returndata)
     (by decide)]
-  rw [if_pos (by exact ⟨by simp, by rw [hlen]; exact hhuge⟩)]
+  rw [ite_eq_left (by exact ⟨by simp, by rw [hlen]; exact hhuge⟩)]
 
 def BoolReturnValid (out : ByteArray) : Prop :=
   32 ≤ out.size ∧ (calldataWord out 0 = ⟨0⟩ ∨ calldataWord out 0 = ⟨1⟩)
@@ -479,16 +479,16 @@ theorem decodeReturnBool_long {out : ByteArray} (hl : 32 ≤ out.size) (hb : out
     omega
   unfold ABI.decodeReturnValue?
   rw [decodeReturnValues_scalarWords_eq (by decide)]
-  rw [if_neg (by simp only [List.isEmpty_cons, hlen]; omega)]
+  rw [ite_eq_right (by simp only [List.isEmpty_cons, hlen]; omega)]
   by_cases hz : calldataWord out 0 = ⟨0⟩
   · have hd := decodeScalarWord_bool_ok_zero h32 (hword.trans hz)
-    simp only [abiBool, decodeScalarWords?, hd, bind, Option.bind, if_pos hz]
+    simp only [abiBool, decodeScalarWords?, hd, bind, Option.bind, ite_eq_left hz]
   · by_cases ho : calldataWord out 0 = ⟨1⟩
     · have hd := decodeScalarWord_bool_ok_one h32 (hword.trans ho)
-      simp only [abiBool, decodeScalarWords?, hd, bind, Option.bind, if_neg hz, if_pos ho]
+      simp only [abiBool, decodeScalarWords?, hd, bind, Option.bind, ite_eq_right hz, ite_eq_left ho]
     · have hd := decodeScalarWord_bool_none_noncanon h32
         (fun he => hz (hword.symm.trans he)) (fun he => ho (hword.symm.trans he))
-      simp only [abiBool, decodeScalarWords?, hd, bind, Option.bind, if_neg hz, if_neg ho]
+      simp only [abiBool, decodeScalarWords?, hd, bind, Option.bind, ite_eq_right hz, ite_eq_right ho]
 
 theorem decodeReturnBool_short {out : ByteArray} (hl : out.size < 32) :
     ABI.decodeReturnValue? abiBool out = none := by
@@ -500,7 +500,7 @@ theorem decodeReturnBool_short {out : ByteArray} (hl : out.size < 32) :
     omega
   unfold ABI.decodeReturnValue?
   rw [decodeReturnValues_scalarWords_eq (by decide)]
-  rw [if_neg (by simp only [List.isEmpty_cons, hlen]; omega)]
+  rw [ite_eq_right (by simp only [List.isEmpty_cons, hlen]; omega)]
   simp only [abiBool, decodeScalarWords?, decodeScalarWord_bool_none_short h32, bind, Option.bind]
 
 theorem decodeReturnBool_valid {out : ByteArray} (hv : BoolReturnValid out)
@@ -518,7 +518,7 @@ theorem decodeReturnBool_invalid {out : ByteArray} (hv : ¬ BoolReturnValid out)
   by_cases hl : 32 ≤ out.size
   · have hz : calldataWord out 0 ≠ ⟨0⟩ := fun he => hv ⟨hl, Or.inl he⟩
     have ho : calldataWord out 0 ≠ ⟨1⟩ := fun he => hv ⟨hl, Or.inr he⟩
-    rw [decodeReturnBool_long hl hb, if_neg hz, if_neg ho]
+    rw [decodeReturnBool_long hl hb, ite_eq_right hz, ite_eq_right ho]
   · exact decodeReturnBool_short (by omega)
 
 /-- Recover the scalar byte list from an already-proved one-word return encoding. -/
@@ -534,7 +534,7 @@ theorem scalarValueEncoding {ty : ABIType} {value : Value} {w : UInt256}
   | some bs =>
     have hbytes : (⟨bs.toArray⟩ : ByteArray) = UInt256.toByteArray w := by
       simpa only [encodeReturnValue?, encodeReturnValues?, encodeABIValues?, hhead,
-        encodeABIValuesFrom?, henc, hdyn, bind, Option.bind, if_false,
+        encodeABIValuesFrom?, henc, hdyn, bind, Option.bind, ite_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, Option.some.injEq] using hret
     have heq : bs = EVM.Word.toBytesBE w := by
       rw [toByteArray_eq_toBytesBE] at hbytes
@@ -581,7 +581,7 @@ theorem decodeCalldata_legacyUint256_uint256_address_address_ok {cd : ByteArray}
       decode_word_at_eq cd 100 (by omega) (by norm_num)
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [w, x, y, z])
     (types := [abiUInt256, abiUInt256, abiAddress, abiAddress]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   have hdecode0 :
       decodeScalarWordWithMode? DecodeMode.legacySolc05 abiUInt256 (cd.toList.drop 4) 0 =
@@ -635,7 +635,7 @@ theorem decodeCalldata_legacyUint256_uint256_address_address_none_short {cd : By
     rfl
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [w, x, y, z])
     (types := [abiUInt256, abiUInt256, abiAddress, abiAddress]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   by_cases hlen0 : 32 ≤ (cd.toList.drop 4).length
   · have htake0 : ((cd.toList.drop 4).take 32).length = 32 := by
       rw [List.length_take]
@@ -742,7 +742,7 @@ theorem decodeCalldata_legacyUint256_address_ok {cd : ByteArray} {x y : Stele.Id
       decode_word_at_eq cd 36 (by omega) (by norm_num)
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x, y])
     (types := [abiUInt256, abiAddress]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   have hdecode0 :
       decodeScalarWordWithMode? DecodeMode.legacySolc05 abiUInt256 (cd.toList.drop 4) 0 =
@@ -777,7 +777,7 @@ theorem decodeCalldata_legacyUint256_address_none_short {cd : ByteArray}
     rfl
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x, y])
     (types := [abiUInt256, abiAddress]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   by_cases hlen0 : 32 ≤ (cd.toList.drop 4).length
   · have htake0 : ((cd.toList.drop 4).take 32).length = 32 := by
       rw [List.length_take]
@@ -848,7 +848,7 @@ theorem decodeCalldata_legacyAddress_uint256_uint256_ok {cd : ByteArray}
       using decode_word_at_eq cd 68 (by omega) (by norm_num)
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x, y, z])
     (types := [abiAddress, abiUInt256, abiUInt256]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   rw [decodeScalarWord_legacyAddress_ok (bytes := cd.toList.drop 4) htake4]
   rw [decodeScalarWordWithMode_uint256_ok (mode := DecodeMode.legacySolc05)
@@ -878,7 +878,7 @@ theorem decodeCalldata_legacyAddress_uint256_uint256_none_short {cd : ByteArray}
     rfl
   rw [decodeCalldataWithMode_legacyScalarWords_eq (names := [x, y, z])
     (types := [abiAddress, abiUInt256, abiUInt256]) (cd := cd) (by decide)]
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
   by_cases hlen0 : 32 ≤ (cd.toList.drop 4).length
   · have htake0 : ((cd.toList.drop 4).take 32).length = 32 := by
       rw [List.length_take]
@@ -960,7 +960,7 @@ theorem decodeCalldata_legacyAddress_address_uint256_uint256_uint256_ok {cd : By
     (names := [x, y, z, w, v])
     (types := [abiAddress, abiAddress, abiUInt256, abiUInt256, abiUInt256])
     (cd := cd) (by decide)]
-  rw [if_neg (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
   simp only [decodeScalarWordsWithMode?]
   rw [decodeScalarWord_legacyAddress_ok (bytes := cd.toList.drop 4)
     (start := 0) htake4]
@@ -1004,7 +1004,7 @@ theorem decodeCalldata_legacyAddress_address_uint256_uint256_uint256_none_short
     (names := [x, y, z, w, v])
     (types := [abiAddress, abiAddress, abiUInt256, abiUInt256, abiUInt256])
     (cd := cd) (by decide)]
-  rw [if_neg (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by rw [hlen]; omega : ¬ cd.toList.length < 4)]
   by_cases hlen0 : 32 ≤ (cd.toList.drop 4).length
   · have htake0 : ((cd.toList.drop 4).take 32).length = 32 := by
       rw [List.length_take]
@@ -1089,7 +1089,7 @@ theorem decodeABIValues_bytes32_address_address_legacy_none_short {bytes : List 
     decodeABIValues? [abiBytes32, abiAddress, abiAddress] bytes 0 0 96 96
         DecodeMode.legacySolc05 = none := by
   simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType,
-    Bool.false_eq_true, if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+    Bool.false_eq_true, ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have htake0n : ¬ (bytes.take 32).length = 32 := by
       rw [List.length_take]
@@ -1145,8 +1145,8 @@ theorem decodeCalldataWithMode_legacyBytes32_address_address_ok {cd : ByteArray}
   have hword68 : ABI.bytesToWord ((cd.toList.drop 68).take 32) = calldataWord cd 68 :=
     decode_word_at_eq cd 68 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress, abiAddress] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
@@ -1156,7 +1156,7 @@ theorem decodeCalldataWithMode_legacyBytes32_address_address_ok {cd : ByteArray}
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake68)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 96)]
   simp [decodeCalldata.insertValues]
   rw [hword36, hword68]
@@ -1170,16 +1170,16 @@ theorem decodeCalldataWithMode_legacyBytes32_address_address_none_short
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress, abiAddress] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 96
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_address_address_legacy_none_short
       (bytes := cd.toList.drop 4) (by
         rw [List.length_drop, htlen]
@@ -1363,7 +1363,7 @@ theorem decodeABIValues_bytes32_address_address_address_int256_int256_legacy_ok
         decodeABIValue? (.elem (.bytes abiBytes32Width)) bytes 0 DecodeMode.legacySolc05 =
           some (.fixedBytes abiBytes32Width (bytes.take 32), 32) := by
       simp only [abiBytes32Width, decodeABIValue?, readBytes?, bind, Option.bind]
-      rw [if_pos (by simpa using hlen0)]
+      rw [ite_eq_left (by simpa using hlen0)]
       simp [zeroPadding?, readBytes?]
     have htail :
         decodeABIValues? [abiAddress, abiAddress, abiAddress, abiInt256,
@@ -1397,11 +1397,11 @@ theorem decodeABIValues_bytes32_address_address_address_int256_int256_legacy_ok
       rw [decodeScalarWords_address_address_address_int256_int256_legacy_ok
         (bytes := bytes) hlen32 hlen64 hlen96 hlen128 hlen160]
     rw [decodeABIValues?]
-    simp only [abiBytes32, isDynamicABIType, staticABIEncodedSize?, Bool.false_eq_true, if_false,
+    simp only [abiBytes32, isDynamicABIType, staticABIEncodedSize?, Bool.false_eq_true, ite_false,
       Nat.zero_add, Option.bind, bind]
     rw [hbytes32]
     simp only [Option.bind, bind]
-    rw [if_pos (by norm_num)]
+    rw [ite_eq_left (by norm_num)]
     rw [show max 192 32 = 192 by norm_num]
     rw [htail]
 
@@ -1457,8 +1457,8 @@ theorem decodeCalldata_legacyBytes32_address_address_address_int256_int256_ok
   have hword164 : ABI.bytesToWord ((cd.toList.drop 164).take 32) = calldataWord cd 164 :=
     decode_word_at_eq cd 164 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, abiInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, abiInt256, isDynamicABIType])]
   simp only
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress, abiAddress, abiAddress, abiInt256,
@@ -1467,7 +1467,7 @@ theorem decodeCalldata_legacyBytes32_address_address_address_int256_int256_ok
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [bind, Option.bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 192)]
   rw [decodeABIValues_bytes32_address_address_address_int256_int256_legacy_ok
     (bytes := cd.toList.drop 4)
@@ -1591,15 +1591,15 @@ theorem decodeCalldata_legacyBytes32_address_address_uint256_ok {cd : ByteArray}
   have hword100 : ABI.bytesToWord ((cd.toList.drop 100).take 32) = calldataWord cd 100 :=
     decode_word_at_eq cd 100 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, abiUInt256, isDynamicABIType])]
   simp only
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress, abiAddress, abiUInt256] = some 128 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [bind, Option.bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 128)]
   rw [decodeABIValues_bytes32_address_address_uint256_legacy_ok
     (bytes := cd.toList.drop 4)
@@ -1653,7 +1653,7 @@ theorem decodeABIValues_bytes32_address_address_int256_int256_legacy_ok {bytes :
       decodeABIValue? (.elem (.bytes abiBytes32Width)) bytes 0 DecodeMode.legacySolc05 =
         some (.fixedBytes abiBytes32Width (bytes.take 32), 32) := by
     simp only [abiBytes32Width, decodeABIValue?, readBytes?, bind, Option.bind]
-    rw [if_pos (by simpa using hlen0)]
+    rw [ite_eq_left (by simpa using hlen0)]
     simp [zeroPadding?, readBytes?]
   have haddr32 :
       decodeScalarWordWithMode? DecodeMode.legacySolc05 abiAddress bytes 32 =
@@ -1702,11 +1702,11 @@ theorem decodeABIValues_bytes32_address_address_int256_int256_legacy_ok {bytes :
     rw [hint128]
     rfl
   rw [decodeABIValues?]
-  simp only [abiBytes32, isDynamicABIType, staticABIEncodedSize?, Bool.false_eq_true, if_false,
+  simp only [abiBytes32, isDynamicABIType, staticABIEncodedSize?, Bool.false_eq_true, ite_false,
     Nat.zero_add, Option.bind, bind]
   rw [hbytes32]
   simp only [Option.bind, bind]
-  rw [if_pos (by norm_num)]
+  rw [ite_eq_left (by norm_num)]
   rw [show max 160 32 = 160 by norm_num]
   rw [decodeABIValues_scalarWordsWithMode_eq
     (mode := DecodeMode.legacySolc05)
@@ -1761,8 +1761,8 @@ theorem decodeCalldata_legacyBytes32_address_address_int256_int256_ok {cd : Byte
   have hword132 : ABI.bytesToWord ((cd.toList.drop 132).take 32) = calldataWord cd 132 :=
     decode_word_at_eq cd 132 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, abiInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, abiInt256, isDynamicABIType])]
   simp only
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress, abiAddress, abiInt256,
@@ -1770,7 +1770,7 @@ theorem decodeCalldata_legacyBytes32_address_address_int256_int256_ok {cd : Byte
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [bind, Option.bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 160)]
   rw [decodeABIValues_bytes32_address_address_int256_int256_legacy_ok
     (bytes := cd.toList.drop 4)
@@ -1854,15 +1854,15 @@ theorem decodeCalldata_legacyBytes32_address_int256_ok {cd : ByteArray}
   have hword68 : ABI.bytesToWord ((cd.toList.drop 68).take 32) = calldataWord cd 68 :=
     decode_word_at_eq cd 68 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, abiInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, abiInt256, isDynamicABIType])]
   simp only
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress, abiInt256] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [bind, Option.bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 96)]
   rw [decodeABIValues_bytes32_address_int256_legacy_ok
     (bytes := cd.toList.drop 4)
@@ -1908,7 +1908,7 @@ theorem decodeABIValue_legacyUint8_ok {bytes : List UInt8} {start : Nat}
         start + 32) := by
   simp only [abiUInt8, abiUInt8Int, decodeABIValue?, readWord?, readBytes?, decodeABIWord?, bind,
     Option.bind]
-  rw [if_pos hlen]
+  rw [ite_eq_left hlen]
   rfl
 
 theorem decodeABIValue_legacyBytes32_ok {bytes : List UInt8} {start : Nat}
@@ -1917,7 +1917,7 @@ theorem decodeABIValue_legacyBytes32_ok {bytes : List UInt8} {start : Nat}
       some (.fixedBytes abiBytes32Width ((bytes.drop start).take 32), start + 32) := by
   simp only [abiBytes32, abiBytes32Width, decodeABIValue?, readBytes?, zeroPadding?, bind,
     Option.bind]
-  rw [if_pos hlen]
+  rw [ite_eq_left hlen]
   simp
 
 abbrev legacyThreeUintAddressBytesDecodedBytes (cd : ByteArray) : ByteArray :=
@@ -1945,7 +1945,7 @@ theorem readNat_drop4_at_eq_calldataWord {cd : ByteArray} (off : Nat)
     have hlen : (((cd.toList.drop 4).drop off).take 32).length = 32 := by
       rw [List.length_take, List.length_drop, List.length_drop, htlen]
       omega
-    rw [if_pos hlen]
+    rw [ite_eq_left hlen]
   rw [hread]
   have hword :
       bytesToWord (((cd.toList.drop 4).drop off).take 32) =
@@ -1960,7 +1960,7 @@ theorem readBytes_drop4_payload {cd : ByteArray} {off len : Nat}
     readBytes? (cd.toList.drop 4) off len =
       some (((cd.toList.drop 4).drop off).take len) := by
   unfold readBytes?
-  rw [if_pos hpayload]
+  rw [ite_eq_left hpayload]
 
 theorem decodeABIValue_legacyBytes_ok {bytes : List UInt8} {start len : Nat}
     (hreadLen : readNat? bytes start = some len)
@@ -1972,11 +1972,11 @@ theorem decodeABIValue_legacyBytes_ok {bytes : List UInt8} {start len : Nat}
   unfold decodeABIValue?
   rw [hreadLen]
   simp only [Option.bind, bind]
-  rw [if_neg hlenMax]
+  rw [ite_eq_right hlenMax]
   have hreadPayload :
       readBytes? bytes (start + 32) len = some ((bytes.drop (start + 32)).take len) := by
     unfold readBytes?
-    rw [if_pos hpayload]
+    rw [ite_eq_left hpayload]
   rw [hreadPayload]
 
 set_option maxHeartbeats 1000000 in
@@ -2053,8 +2053,8 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_ok {cd : Byte
         (len := (calldataWord cd (4 + (calldataWord cd 132).toNat)).toNat)
         hreadLen hlenMax hpayload
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -2064,7 +2064,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_ok {cd : Byte
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [Option.bind, bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 160)]
   have hdynUInt : isDynamicABIType abiUInt256 = false := by
     decide
@@ -2090,30 +2090,30 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_ok {cd : Byte
             paddedSize (calldataWord cd (4 + (calldataWord cd 132).toNat)).toNat)) := by
     rw [decodeABIValues?]
     rw [hdynUInt]
-    simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
+    simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
     rw [hdecode0]
-    simp only [Nat.zero_add, if_true]
+    simp only [Nat.zero_add, ite_true]
     rw [decodeABIValues?]
     rw [hdynUInt]
-    simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+    simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
     rw [hdecode32]
-    simp only [if_true]
+    simp only [ite_true]
     rw [decodeABIValues?]
     rw [hdynUInt]
-    simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+    simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
     rw [hdecode64]
-    simp only [if_true]
+    simp only [ite_true]
     rw [decodeABIValues?]
     rw [hdynAddr]
-    simp only [Bool.false_eq_true, if_false, hsizeAddr, Option.bind, bind]
+    simp only [Bool.false_eq_true, ite_false, hsizeAddr, Option.bind, bind]
     rw [hdecode96]
-    simp only [if_true]
+    simp only [ite_true]
     rw [decodeABIValues?]
     rw [hdynBytes]
-    simp only [if_true, Option.bind, bind]
+    simp only [ite_true, Option.bind, bind]
     rw [hreadOff]
     dsimp only
-    rw [if_neg hoffMax]
+    rw [ite_eq_right hoffMax]
     simp only [Nat.zero_add]
     rw [hdecodeBytes]
     simp only [ABI.decodeABIValues?.eq_def, hword4, hword36, hword68, hword100,
@@ -2132,8 +2132,8 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_short
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -2143,7 +2143,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_short
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [Option.bind, bind]
-  rw [if_pos (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_left (by rw [List.length_drop, htlen]; omega :
     (cd.toList.drop 4).length < 160)]
 
 set_option maxHeartbeats 1000000 in
@@ -2181,8 +2181,8 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_offset_h
       readNat? (cd.toList.drop 4) 128 = some (calldataWord cd 132).toNat := by
     simpa using readNat_drop4_at_eq_calldataWord (cd := cd) 128 (by omega)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -2192,7 +2192,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_offset_h
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [Option.bind, bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 160)]
   have hdynUInt : isDynamicABIType abiUInt256 = false := by
     decide
@@ -2206,30 +2206,30 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_offset_h
     decide
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
   rw [hdecode0]
-  simp only [Nat.zero_add, if_true]
+  simp only [Nat.zero_add, ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode32]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode64]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynAddr]
-  simp only [Bool.false_eq_true, if_false, hsizeAddr, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeAddr, Option.bind, bind]
   rw [hdecode96]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynBytes]
-  simp only [if_true, Option.bind, bind]
+  simp only [ite_true, Option.bind, bind]
   rw [hreadOff]
   dsimp only
-  rw [if_pos hoff]
+  rw [ite_eq_left hoff]
 
 theorem decodeABIValue_legacyBytes_none_length_short {bytes : List UInt8} {start : Nat}
     (hreadLen : readNat? bytes start = none) :
@@ -2251,9 +2251,9 @@ theorem decodeABIValue_legacyBytes_none_payload_short {bytes : List UInt8} {star
     decodeABIValue? abiBytes bytes start DecodeMode.legacySolc05 = none := by
   unfold decodeABIValue?
   simp only [abiBytes, hreadLen, Option.bind, bind]
-  rw [if_neg hlenMax]
+  rw [ite_eq_right hlenMax]
   unfold readBytes?
-  rw [if_neg hpayloadShort]
+  rw [ite_eq_right hpayloadShort]
 
 set_option maxHeartbeats 1000000 in
 theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_short
@@ -2297,15 +2297,15 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_s
         ¬ (((cd.toList.drop 4).drop (calldataWord cd 132).toNat).take 32).length = 32 := by
       rw [List.length_take, List.length_drop, List.length_drop, htlen]
       omega
-    rw [if_neg hlen]
+    rw [ite_eq_right hlen]
     rfl
   have hdecodeBytes :
       decodeABIValue? abiBytes (cd.toList.drop 4) (calldataWord cd 132).toNat
           DecodeMode.legacySolc05 = none :=
     decodeABIValue_legacyBytes_none_length_short hreadLen
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -2315,7 +2315,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_s
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [Option.bind, bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 160)]
   have hdynUInt : isDynamicABIType abiUInt256 = false := by
     decide
@@ -2329,30 +2329,30 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_s
     decide
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
   rw [hdecode0]
-  simp only [Nat.zero_add, if_true]
+  simp only [Nat.zero_add, ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode32]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode64]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynAddr]
-  simp only [Bool.false_eq_true, if_false, hsizeAddr, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeAddr, Option.bind, bind]
   rw [hdecode96]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynBytes]
-  simp only [if_true, Option.bind, bind]
+  simp only [ite_true, Option.bind, bind]
   rw [hreadOff]
   dsimp only
-  rw [if_neg hoffMax]
+  rw [ite_eq_right hoffMax]
   simp only [Nat.zero_add]
   rw [hdecodeBytes]
 
@@ -2403,8 +2403,8 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_h
           DecodeMode.legacySolc05 = none :=
     decodeABIValue_legacyBytes_none_length_huge hreadLen hlenHuge
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -2414,7 +2414,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_h
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [Option.bind, bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 160)]
   have hdynUInt : isDynamicABIType abiUInt256 = false := by
     decide
@@ -2428,30 +2428,30 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_length_h
     decide
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
   rw [hdecode0]
-  simp only [Nat.zero_add, if_true]
+  simp only [Nat.zero_add, ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode32]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode64]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynAddr]
-  simp only [Bool.false_eq_true, if_false, hsizeAddr, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeAddr, Option.bind, bind]
   rw [hdecode96]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynBytes]
-  simp only [if_true, Option.bind, bind]
+  simp only [ite_true, Option.bind, bind]
   rw [hreadOff]
   dsimp only
-  rw [if_neg hoffMax]
+  rw [ite_eq_right hoffMax]
   simp only [Nat.zero_add]
   rw [hdecodeBytes]
 
@@ -2505,8 +2505,8 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_payload_
           DecodeMode.legacySolc05 = none :=
     decodeABIValue_legacyBytes_none_payload_short hreadLen hlenMax hpayloadShort
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by
     rintro ⟨_, hhuge⟩
     rw [htlen] at hhuge
     omega)]
@@ -2516,7 +2516,7 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_payload_
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress, abiInt256, abiBytes]]
   simp only [Option.bind, bind]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega :
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega :
     ¬ (cd.toList.drop 4).length < 160)]
   have hdynUInt : isDynamicABIType abiUInt256 = false := by
     decide
@@ -2530,30 +2530,30 @@ theorem decodeCalldata_legacyUint256_uint256_uint256_address_bytes_none_payload_
     decide
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind, Nat.zero_add]
   rw [hdecode0]
-  simp only [Nat.zero_add, if_true]
+  simp only [Nat.zero_add, ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode32]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynUInt]
-  simp only [Bool.false_eq_true, if_false, hsizeUInt, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeUInt, Option.bind, bind]
   rw [hdecode64]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynAddr]
-  simp only [Bool.false_eq_true, if_false, hsizeAddr, Option.bind, bind]
+  simp only [Bool.false_eq_true, ite_false, hsizeAddr, Option.bind, bind]
   rw [hdecode96]
-  simp only [if_true]
+  simp only [ite_true]
   rw [decodeABIValues?]
   rw [hdynBytes]
-  simp only [if_true, Option.bind, bind]
+  simp only [ite_true, Option.bind, bind]
   rw [hreadOff]
   dsimp only
-  rw [if_neg hoffMax]
+  rw [ite_eq_right hoffMax]
   simp only [Nat.zero_add]
   rw [hdecodeBytes]
 
@@ -2614,8 +2614,8 @@ theorem decodeCalldata_legacyBytes32_uint256_ok {cd : ByteArray} {x y : Stele.Id
   have hword36 : ABI.bytesToWord ((cd.toList.drop 36).take 32) = calldataWord cd 36 :=
     decode_word_at_eq cd 36 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiUInt256] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
@@ -2624,7 +2624,7 @@ theorem decodeCalldata_legacyBytes32_uint256_ok {cd : ByteArray} {x y : Stele.Id
   rw [decodeABIValues_bytes32_uint256_legacy_ok (bytes := cd.toList.drop 4)
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
   simp [decodeCalldata.insertValues]
   rw [hword36]
 
@@ -2633,7 +2633,7 @@ theorem decodeABIValues_bytes32_uint256_legacy_none_short {bytes : List UInt8}
     decodeABIValues? [abiBytes32, abiUInt256] bytes 0 0 64 64 DecodeMode.legacySolc05 =
       none := by
   simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiUInt256, isDynamicABIType,
-    Bool.false_eq_true, if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+    Bool.false_eq_true, ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have htake0n : ¬ (bytes.take 32).length = 32 := by
       rw [List.length_take]
@@ -2660,16 +2660,16 @@ theorem decodeCalldata_legacyBytes32_uint256_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiUInt256] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 64
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_uint256_legacy_none_short (bytes := cd.toList.drop 4) (by
       rw [List.length_drop, htlen]
       omega)]
@@ -2703,8 +2703,8 @@ theorem decodeCalldata_legacyBytes32_address_ok {cd : ByteArray} {x y : Stele.Id
   have hword36 : ABI.bytesToWord ((cd.toList.drop 36).take 32) = calldataWord cd 36 :=
     decode_word_at_eq cd 36 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
@@ -2713,7 +2713,7 @@ theorem decodeCalldata_legacyBytes32_address_ok {cd : ByteArray} {x y : Stele.Id
   rw [decodeABIValues_bytes32_address_legacy_ok (bytes := cd.toList.drop 4)
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 64)]
   simp [decodeCalldata.insertValues]
   rw [hword36]
 
@@ -2722,7 +2722,7 @@ theorem decodeABIValues_bytes32_address_legacy_none_short {bytes : List UInt8}
     decodeABIValues? [abiBytes32, abiAddress] bytes 0 0 64 64 DecodeMode.legacySolc05 =
       none := by
   simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType,
-    Bool.false_eq_true, if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+    Bool.false_eq_true, ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have htake0n : ¬ (bytes.take 32).length = 32 := by
       rw [List.length_take]
@@ -2749,16 +2749,16 @@ theorem decodeCalldata_legacyBytes32_address_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiAddress] = some 64 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 64
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_address_legacy_none_short (bytes := cd.toList.drop 4) (by
       rw [List.length_drop, htlen]
       omega)]
@@ -2777,7 +2777,7 @@ theorem decodeABIValues_bytes32_bytes32_uint256_legacy_ok {bytes : List UInt8}
   have hlen32le : 32 ≤ bytes.length - 32 := by
     rw [List.length_take, List.length_drop] at hlen32
     omega
-  rw [if_pos hlen32le]
+  rw [ite_eq_left hlen32le]
   have hlen64le : 32 ≤ bytes.length - 64 := by
     rw [List.length_take, List.length_drop] at hlen64
     omega
@@ -2807,8 +2807,8 @@ theorem decodeCalldata_legacyBytes32_bytes32_uint256_ok {cd : ByteArray}
   have hword68 : ABI.bytesToWord ((cd.toList.drop 68).take 32) = calldataWord cd 68 :=
     decode_word_at_eq cd 68 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiBytes32, abiUInt256] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
@@ -2818,7 +2818,7 @@ theorem decodeCalldata_legacyBytes32_bytes32_uint256_ok {cd : ByteArray}
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake68)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 96)]
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 96)]
   simp [decodeCalldata.insertValues]
   rw [hword68]
 
@@ -2828,7 +2828,7 @@ theorem decodeABIValues_bytes32_bytes32_uint256_legacy_none_short {bytes : List 
         DecodeMode.legacySolc05 =
       none := by
   simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiUInt256, isDynamicABIType,
-    Bool.false_eq_true, if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+    Bool.false_eq_true, ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have hnot : ¬ 32 ≤ bytes.length := by omega
     simp [decodeABIValue?, readBytes?, hnot]
@@ -2848,7 +2848,7 @@ theorem decodeABIValues_bytes32_bytes32_uint256_legacy_none_short {bytes : List 
         rw [List.length_take, List.length_drop]
         omega
       have hlen32le : 32 ≤ bytes.length - 32 := by omega
-      rw [if_pos hlen32le]
+      rw [ite_eq_left hlen32le]
       have hnot : ¬ 32 ≤ bytes.length - 64 := by omega
       simp [readWord?, readBytes?, hnot]
 
@@ -2861,16 +2861,16 @@ theorem decodeCalldata_legacyBytes32_bytes32_uint256_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiUInt256, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiBytes32, abiUInt256] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 96
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_bytes32_uint256_legacy_none_short
       (bytes := cd.toList.drop 4) (by
         rw [List.length_drop, htlen]
@@ -2891,7 +2891,7 @@ theorem decodeABIValues_bytes32_bytes32_address_legacy_ok {bytes : List UInt8}
   have hlen32le : 32 ≤ bytes.length - 32 := by
     rw [List.length_take, List.length_drop] at hlen32
     omega
-  rw [if_pos hlen32le]
+  rw [ite_eq_left hlen32le]
   have hlen64le : 32 ≤ bytes.length - 64 := by
     rw [List.length_take, List.length_drop] at hlen64
     omega
@@ -2920,8 +2920,8 @@ theorem decodeCalldata_legacyBytes32_bytes32_address_ok {cd : ByteArray}
   have hword68 : ABI.bytesToWord ((cd.toList.drop 68).take 32) = calldataWord cd 68 :=
     decode_word_at_eq cd 68 (by omega) (by norm_num)
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiBytes32, abiAddress] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
@@ -2931,7 +2931,7 @@ theorem decodeCalldata_legacyBytes32_bytes32_address_ok {cd : ByteArray}
     (by simpa using htake4)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake36)
     (by simpa [List.drop_drop, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc] using htake68)]
-  rw [if_neg (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 96)]
+  rw [ite_eq_right (by rw [List.length_drop, htlen]; omega : ¬ (cd.toList.drop 4).length < 96)]
   simp [decodeCalldata.insertValues]
   rw [hword68]
 
@@ -2941,7 +2941,7 @@ theorem decodeABIValues_bytes32_bytes32_address_legacy_none_short {bytes : List 
         DecodeMode.legacySolc05 =
       none := by
   simp only [decodeABIValues?, abiBytes32, abiBytes32Width, abiAddress, isDynamicABIType,
-    Bool.false_eq_true, if_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
+    Bool.false_eq_true, ite_false, staticABIEncodedSize?, bind, Option.bind, Nat.zero_add]
   by_cases h32 : bytes.length < 32
   · have hnot : ¬ 32 ≤ bytes.length := by omega
     simp [decodeABIValue?, readBytes?, hnot]
@@ -2953,7 +2953,7 @@ theorem decodeABIValues_bytes32_bytes32_address_legacy_none_short {bytes : List 
     · have hnot : ¬ 32 ≤ bytes.length - 32 := by omega
       simp [hnot]
     · have hlen32le : 32 ≤ bytes.length - 32 := by omega
-      rw [if_pos hlen32le]
+      rw [ite_eq_left hlen32le]
       have hnot : ¬ 32 ≤ bytes.length - 64 := by omega
       simp [readWord?, readBytes?, hnot]
 
@@ -2966,16 +2966,16 @@ theorem decodeCalldata_legacyBytes32_bytes32_address_none_short {cd : ByteArray}
     rw [byteArray_toList_eq, Array.length_toList]
     rfl
   unfold decodeCalldataWithMode decodeCalldata
-  rw [if_neg (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
-  rw [if_neg (by simp [abiBytes32, abiAddress, isDynamicABIType])]
+  rw [ite_eq_right (by rw [htlen]; omega : ¬ cd.toList.length < 4)]
+  rw [ite_eq_right (by simp [abiBytes32, abiAddress, isDynamicABIType])]
   simp only [decodeCalldata.decodeArgs]
   rw [show abiTupleHeadSize? [abiBytes32, abiBytes32, abiAddress] = some 96 by
     simp [abiTupleHeadSize?, isDynamicABIType, staticABIEncodedSize?,
       abiBytes32, abiBytes32Width, abiUInt256, abiAddress]]
   simp only [bind, Option.bind]
   by_cases hbytes : (cd.toList.drop 4).length < 96
-  · rw [if_pos hbytes]
-  · rw [if_neg hbytes]
+  · rw [ite_eq_left hbytes]
+  · rw [ite_eq_right hbytes]
     rw [decodeABIValues_bytes32_bytes32_address_legacy_none_short
       (bytes := cd.toList.drop 4) (by
         rw [List.length_drop, htlen]
@@ -2991,16 +2991,16 @@ theorem decodeCalldataWithMode_legacyBytes32_ok {cd : ByteArray} {x : Ident}
     rfl
   have hnot4 : ¬ cd.toList.length < 4 := by
     rw [htlen]; omega
-  rw [if_neg hnot4]
+  rw [ite_eq_right hnot4]
   have hnotDyn : ¬ ([abiBytes32].any isDynamicABIType = true ∧ 2 ^ 255 ≤ cd.toList.length) := by
     simp [abiBytes32, isDynamicABIType]
-  rw [if_neg hnotDyn]
+  rw [ite_eq_right hnotDyn]
   have hread : readBytes? (cd.toList.drop 4) 0 32 =
       some ((cd.toList.drop 4).take 32) := by
     unfold readBytes?
     have hlen : (((cd.toList.drop 4).drop 0).take 32).length = 32 := by
       rw [List.drop_zero, List.length_take, List.length_drop, htlen]; omega
-    rw [if_pos hlen, List.drop_zero]
+    rw [ite_eq_left hlen, List.drop_zero]
   have hblen : ((cd.toList.drop 4).take 32).length = 32 := by
     rw [List.length_take, List.length_drop, htlen]; omega
   have hpad : zeroPadding? ((cd.toList.drop 4).take 32) 32 0 = some () := by
@@ -3022,15 +3022,15 @@ theorem decodeCalldataWithMode_legacyBytes32_none_short {cd : ByteArray} {x : Id
     rfl
   have hnot4 : ¬ cd.toList.length < 4 := by
     rw [htlen]; omega
-  rw [if_neg hnot4]
+  rw [ite_eq_right hnot4]
   have hnotDyn : ¬ ([abiBytes32].any isDynamicABIType = true ∧ 2 ^ 255 ≤ cd.toList.length) := by
     simp [abiBytes32, isDynamicABIType]
-  rw [if_neg hnotDyn]
+  rw [ite_eq_right hnotDyn]
   have hread : readBytes? (cd.toList.drop 4) 0 32 = none := by
     unfold readBytes?
     have hlen : ¬ (((cd.toList.drop 4).drop 0).take 32).length = 32 := by
       rw [List.drop_zero, List.length_take, List.length_drop, htlen]; omega
-    rw [if_neg hlen]
+    rw [ite_eq_right hlen]
   simp [decodeCalldata.decodeArgs, abiBytes32, ABI.decodeABIValues?, ABI.decodeABIValue?,
     isDynamicABIType, staticABIEncodedSize?, abiTupleHeadSize?, hread]
 

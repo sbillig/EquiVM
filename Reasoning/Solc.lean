@@ -103,8 +103,8 @@ theorem evmSelectorDecode {cd : ByteArray} (hsz : 4 ≤ cd.size)
   by_cases hc : cd.data.toList.take 4 = [c0, c1, c2, c3]
   · have h1 : UInt256.shiftRight (uInt256OfByteArray (cd.readBytes 0 32)) ⟨224⟩ = sel :=
       u256_inj (by rw [hsv, hc, hsel])
-    rw [if_pos ((extract4_eq_iff cd c0 c1 c2 c3 hsz).mpr hc), h1, u256_eq_refl]
-  · rw [if_neg (fun he => hc ((extract4_eq_iff cd c0 c1 c2 c3 hsz).mp he))]
+    rw [ite_eq_left ((extract4_eq_iff cd c0 c1 c2 c3 hsz).mpr hc), h1, u256_eq_refl]
+  · rw [ite_eq_right (fun he => hc ((extract4_eq_iff cd c0 c1 c2 c3 hsz).mp he))]
     apply u256_eq_of_ne
     intro he
     apply hc
@@ -7004,7 +7004,7 @@ theorem RD.solcStaticcall {code : ByteArray} {ee : ExecutionEnv} {g : Sat256}
       fun _ => eq_false (Fin.not_lt_zero _)
     have hdeqF : (s.executionEnv.depth == 1024) = false := by
       rw [beq_eq_false_iff_ne]; intro hh; rw [hh] at hdepth'; exact absurd hdepth' (by decide)
-    simp only [List.length_cons, hovF, hdepthLt, hbal, hgtF, hdeqF, and_true, if_true,
+    simp only [List.length_cons, hovF, hdepthLt, hbal, hgtF, hdeqF, and_true, ite_true,
       Bool.or_false] at st
     rw [collapse_two_stage, hcode] at st
     have hfuel : g.toNat + 1 - k = (g.toNat - k) + 1 := by omega
@@ -7161,7 +7161,7 @@ theorem RD.solcStaticcallDepthLimit {code : ByteArray} {ee : ExecutionEnv} {g : 
     have hdeqT : (s.executionEnv.depth == 1024) = true := by
       rw [beq_iff_eq]; exact hdepth1024
     simp only [List.length_cons, hovF, hdepthF, hbal, hgtF, hdeqT, and_false,
-      Bool.or_true, if_true] at st
+      Bool.or_true, ite_true] at st
     rw [collapse_two_stage, hcode] at st
     have hfuel : g.toNat + 1 - k = (g.toNat - k) + 1 := by omega
     have hXP := hX.trans (hfuel.symm ▸ X_peel (f := g.toNat - k) st)

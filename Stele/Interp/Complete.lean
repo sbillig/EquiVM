@@ -232,51 +232,51 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
       step execStmt [hover, scriptOracle]; constructor
   | .assign hperm hv hst =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hst]; rw [if_neg (not_assignStatic hperm)]; constructor
+      step execStmt [hover, hv, hst]; rw [ite_eq_right (not_assignStatic hperm)]; constructor
   | .assignExprRevert hv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv]; constructor
   | .assignStoreRevert hv hst =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv, hst]; constructor
   | .assignStatic hv hst hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hst]; rw [if_pos ⟨.inl trivial, hp⟩]; constructor
+      step execStmt [hover, hv, hst]; rw [ite_eq_left ⟨.inl trivial, hp⟩]; constructor
   | .assignTransientStatic hv hst hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hst]; rw [if_pos ⟨.inr trivial, hp⟩]; constructor
+      step execStmt [hover, hv, hst]; rw [ite_eq_left ⟨.inr trivial, hp⟩]; constructor
   | .pushVal hperm hv hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hp]; rw [if_neg (not_static hperm)]; constructor
+      step execStmt [hover, hv, hp]; rw [ite_eq_right (not_static hperm)]; constructor
   | .pushValExprRevert hv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv]; constructor
   | .pushValStoreRevert hv hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv, hp]; constructor
   | .pushValStatic hv hp hperm =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hp]; rw [if_pos hperm]; constructor
+      step execStmt [hover, hv, hp]; rw [ite_eq_left hperm]; constructor
   | .pushGrow hperm hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hp]; rw [if_neg (not_static hperm)]; constructor
+      step execStmt [hover, hp]; rw [ite_eq_right (not_static hperm)]; constructor
   | .pushGrowRevert hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hp]; constructor
   | .pushGrowStatic hp hperm =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hp]; rw [if_pos hperm]; constructor
+      step execStmt [hover, hp]; rw [ite_eq_left hperm]; constructor
   | .pop hperm hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hp]; rw [if_neg (not_static hperm)]; constructor
+      step execStmt [hover, hp]; rw [ite_eq_right (not_static hperm)]; constructor
   | .popRevert hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hp]; constructor
   | .popStatic hp hperm =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hp]; rw [if_pos hperm]; constructor
+      step execStmt [hover, hp]; rw [ite_eq_left hperm]; constructor
   | .delete hperm hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hp]; rw [if_neg (not_static hperm)]; constructor
+      step execStmt [hover, hp]; rw [ite_eq_right (not_static hperm)]; constructor
   | .deleteRevert hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hp]; constructor
   | .deleteStatic hp hperm =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hp]; rw [if_pos hperm]; constructor
+      step execStmt [hover, hp]; rw [ite_eq_left hperm]; constructor
   | .requireTrue hc =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hc]; constructor
   | .requireFalse hc =>
@@ -376,17 +376,17 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
     obtain ⟨ω₀, hrun⟩ := typedCallViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hrecv, hval, hargs, hrun rest, hdec]
-      rw [if_neg (not_callStatic hperm)]; constructor
+      rw [ite_eq_right (not_callStatic hperm)]; constructor
   | .externalCallFailure hperm hrecv hval hargs hcall =>
     obtain ⟨ω₀, hrun⟩ := typedCallViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hrecv, hval, hargs, hrun rest]
-      rw [if_neg (not_callStatic hperm)]; constructor
+      rw [ite_eq_right (not_callStatic hperm)]; constructor
   | .externalCallReturnDecodeRevert hperm hrecv hval hargs hcall hdec =>
     obtain ⟨ω₀, hrun⟩ := typedCallViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hrecv, hval, hargs, hrun rest, hdec]
-      rw [if_neg (not_callStatic hperm)]; constructor
+      rw [ite_eq_right (not_callStatic hperm)]; constructor
   | .externalCallReceiverRevert hrecv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hrecv]; constructor
   | .externalCallSendRevert hrecv hval =>
@@ -396,17 +396,17 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
       step execStmt [hover, hrecv, hval, hargs]; constructor
   | .externalCallStatic hrecv hval hargs hnz hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hrecv, hval, hargs]; rw [if_pos ⟨hnz, hp⟩]; constructor
+      step execStmt [hover, hrecv, hval, hargs]; rw [ite_eq_left ⟨hnz, hp⟩]; constructor
   | .lowLevelCallSuccess hperm hrecv hval hcd hcall =>
     obtain ⟨ω₀, hrun⟩ := callViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hrecv, hval, hcd, hrun rest]
-      rw [if_neg (not_callStatic hperm)]; constructor
+      rw [ite_eq_right (not_callStatic hperm)]; constructor
   | .lowLevelCallFailure hperm hrecv hval hcd hcall =>
     obtain ⟨ω₀, hrun⟩ := callViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hrecv, hval, hcd, hrun rest]
-      rw [if_neg (not_callStatic hperm)]; constructor
+      rw [ite_eq_right (not_callStatic hperm)]; constructor
   | .lowLevelCallReceiverRevert hrecv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hrecv]; constructor
   | .lowLevelCallSendRevert hrecv hval =>
@@ -416,7 +416,7 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
       step execStmt [hover, hrecv, hval, hcd]; constructor
   | .lowLevelCallStatic hrecv hval hcd hnz hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hrecv, hval, hcd]; rw [if_pos ⟨hnz, hp⟩]; constructor
+      step execStmt [hover, hrecv, hval, hcd]; rw [ite_eq_left ⟨hnz, hp⟩]; constructor
   | .delegateCallSuccess hrecv hcd hcall =>
     obtain ⟨ω₀, hrun⟩ := delegateCallViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
@@ -434,20 +434,20 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
     obtain ⟨ω₁, n₁, h₁⟩ := execBlock_complete hblock
     refine stmt_complete (ω₀ ++ ω₁) n₁ fun fuel hf rest hover => ?_
     step execStmt [hover, hrecv, hval, hargs, hrun (ω₁ ++ rest), hdec]
-    rw [if_neg (not_callStatic hperm)]
+    rw [ite_eq_right (not_callStatic hperm)]
     exact h₁ fuel hf rest
   | .checkedCallFail hperm hrecv hval hargs hcall hblock =>
     obtain ⟨ω₀, hrun⟩ := typedCallViaEVMRun_complete hcall
     obtain ⟨ω₁, n₁, h₁⟩ := execBlock_complete hblock
     refine stmt_complete (ω₀ ++ ω₁) n₁ fun fuel hf rest hover => ?_
     step execStmt [hover, hrecv, hval, hargs, hrun (ω₁ ++ rest)]
-    rw [if_neg (not_callStatic hperm)]
+    rw [ite_eq_right (not_callStatic hperm)]
     exact h₁ fuel hf rest
   | .checkedCallReturnDecodeRevert hperm hrecv hval hargs hcall hdec =>
     obtain ⟨ω₀, hrun⟩ := typedCallViaEVMRun_complete hcall
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hrecv, hval, hargs, hrun rest, hdec]
-      rw [if_neg (not_callStatic hperm)]; constructor
+      rw [ite_eq_right (not_callStatic hperm)]; constructor
   | .checkedCallReceiverRevert hrecv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hrecv]; constructor
   | .checkedCallSendRevert hrecv hval =>
@@ -457,31 +457,31 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
       step execStmt [hover, hrecv, hval, hargs]; constructor
   | .checkedCallStatic hrecv hval hargs hnz hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hrecv, hval, hargs]; rw [if_pos ⟨hnz, hp⟩]; constructor
+      step execStmt [hover, hrecv, hval, hargs]; rw [ite_eq_left ⟨hnz, hp⟩]; constructor
   | .newSuccess hperm hv hargs hsalt hnew =>
     obtain ⟨ω₀, hrun⟩ := newViaEVMRun_complete hnew
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hv, hargs, hsalt, hrun rest]
-      rw [if_neg (not_static hperm)]; constructor
+      rw [ite_eq_right (not_static hperm)]; constructor
   | .newRevert hperm hv hargs hsalt hnew =>
     obtain ⟨ω₀, hrun⟩ := newViaEVMRun_complete hnew
     exact stmt_complete ω₀ 0 fun _ _ rest hover => by
       step execStmt [hover, hv, hargs, hsalt, hrun rest]
-      rw [if_neg (not_static hperm)]; constructor
+      rw [ite_eq_right (not_static hperm)]; constructor
   | .newValueRevert hv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv]; constructor
   | .newArgsRevert hv hargs =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv, hargs]; constructor
   | .newStatic hv hargs hsalt hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hargs, hsalt]; rw [if_pos hp]; constructor
+      step execStmt [hover, hv, hargs, hsalt]; rw [ite_eq_left hp]; constructor
   | .«return» hv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv]; constructor
   | .returnRevert hv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv]; constructor
   | .setImmutable hv hty hfit =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hv, hty]; rw [if_pos hfit]; constructor
+      step execStmt [hover, hv, hty]; rw [ite_eq_left hfit]; constructor
   | .setImmutableRevert hv =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hv]; constructor
   | .«break» =>
@@ -490,12 +490,12 @@ theorem execStmt_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {stmt
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover]; constructor
   | .emit hperm hargs =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hargs]; rw [if_neg (not_static hperm)]; constructor
+      step execStmt [hover, hargs]; rw [ite_eq_right (not_static hperm)]; constructor
   | .emitArgsRevert hargs =>
     exact stmt_complete [] 0 fun _ _ _ hover => by step execStmt [hover, hargs]; constructor
   | .emitStatic hargs hp =>
     exact stmt_complete [] 0 fun _ _ _ hover => by
-      step execStmt [hover, hargs]; rw [if_pos hp]; constructor
+      step execStmt [hover, hargs]; rw [ite_eq_left hp]; constructor
 
 theorem execForLoop_complete {cfg : Config} {stele : Frame} {evm : EVM.State} {cond : Expr}
     {post body : List Stmt} {r : ExecResult} (h : ExecForLoop cfg stele evm cond post body r) :
@@ -711,7 +711,7 @@ theorem steleExecRun_complete {cfg : Config} {contract : ContractDecl} {immutabl
     obtain ⟨ω, n, hn⟩ := execFuncBody_complete hbody
     refine ⟨n, ω, _, ?_, by simpa using hn n le_rfl []⟩
     simp only [steleExecRun, hsel, hrecv, execTransitionBody]
-    rw [if_pos (by simp [hp, hr])]
+    rw [ite_eq_left (by simp [hp, hr])]
     rfl
   | fallback hsel hrecv hfb hargs hrc hevm hbody =>
     subst hevm
@@ -731,7 +731,7 @@ theorem steleCtorExecRun_complete {cfg : Config} {contract : ContractDecl} {args
     subst hevm hstore
     obtain ⟨ω, n, hn⟩ := execFuncBody_complete hbody
     refine ⟨n, ω, _, ?_, by simpa using hn n le_rfl []⟩
-    simp only [steleCtorExecRun, hlen, if_true, execTransitionBody]
+    simp only [steleCtorExecRun, hlen, ite_true, execTransitionBody]
     rfl
 
 end Stele.Interp
