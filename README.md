@@ -136,8 +136,13 @@ Install the toolchain pinned in [`lean-toolchain`](lean-toolchain) (easiest via
 ```sh
 lake exe cache get   # prebuilt Mathlib cache
 lake build           # core library
-lake build Examples Benchmarks   # the proof developments (large: expect a long build)
+lake build Reasoning Stele EVM ABI EquiVM   # the libraries
 ```
+
+On this branch (`lean-4.35`: Lean 4.35, Mathlib v4.35.0, EVMLean `lean-4.35`) only the
+libraries above are ported. `Examples`, `Tests`, `Benchmarks` and `Proofs` are not built
+here and do not build yet; on Lean 4.29 they were built with
+`lake build Examples Benchmarks`.
 
 ## Proving a contract correct
 
