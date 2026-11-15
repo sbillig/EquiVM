@@ -44,7 +44,8 @@ root = "Tests.DiffTest.Main"
 # name = "equivm"
 # root = "EquiVM"
 
-# Local wiring: EVMLean's `fe-stack` branch (`clz` and `precompiles`), to be replaced by a pinned revision.
+# EVMLean's `fe-stack` branch (`clz` and `precompiles`).
 [[require]]
 name = "evmlean"
-path = "../EVMLean-fe"
+git = "https://github.com/sbillig/EVMLean.git"
+rev = "cebfdd79d591f3cb62d9e494fe1845fe83d72545"
