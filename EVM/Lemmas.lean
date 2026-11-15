@@ -56,9 +56,8 @@ def UInt256.toBytesWithSizeProof (val : Ethereum.UInt256) : { b : List UInt8 // 
     by
       simp [pad]
       have hb : b.length ≤ 32 := by
-        have ha : (val.toNat : ℕ) < 2 ^ (8 * 32) := by
-          simp [Ethereum.UInt256.size, Ethereum.UInt256.toNat]
-        simpa [b, BE] using toBytes'_le (k := 32) ha
+        have ha : (val.val : ℕ) < 2 ^ (8 * 32) := val.val.isLt
+        exact toBytes'_le (k := 32) ha
       have h32 : 32 < USize.size := by
         rcases System.Platform.numBits_eq with h | h <;> rw [USize.size, h] <;> norm_num
       have h32' : (OfNat.ofNat 32 : USize).toNat = 32 := by
