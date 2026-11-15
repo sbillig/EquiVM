@@ -144,6 +144,18 @@ libraries above are ported. `Examples`, `Tests`, `Benchmarks` and `Proofs` are n
 here and do not build yet; on Lean 4.29 they were built with
 `lake build Examples Benchmarks`.
 
+### Definition changes for Lean 4.35
+
+The port changes two definitions; everything else is proof repair.
+
+- `ABI.BitWidth` and `ABI.FinPos` (`ABI/Types.lean`) are `@[reducible]`. Lean 4.35 checks the
+  type of a metavariable assignment at reducible transparency, so a lemma over `bits : BitWidth`
+  no longer matched a term of type `{ m : Nat // ... }` (for example
+  `rw [normalizeInt_uint_eq_self]`). Their meaning and derived instances are unchanged.
+- In EVMLean, `Primop.Nullary` to `Primop.Quaternary` (`Ethereum/Wheels.lean`) are `abbrev`s,
+  for the same reason: `simp` could no longer instantiate `f : Primop.Binary` with an operation
+  such as `UInt256.add`.
+
 ## Proving a contract correct
 
 To prove a new contract correct, create a new directory following the template
