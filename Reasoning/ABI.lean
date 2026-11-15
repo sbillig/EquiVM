@@ -1187,7 +1187,7 @@ theorem decodeCalldataWithMode_empty_ok {mode : DecodeMode} {cd : ByteArray}
       rw [byteArray_toList_eq, Array.length_toList]; rfl
     simp [decodeCalldataWithMode, decodeCalldata, htlen, hsz4,
       ABI.Solc08Calldata.decodeArgs?, decodeCalldata.insertValues]
-  · simpa [decodeCalldataWithMode] using decodeCalldata_empty_ok (cd := cd) hsz4
+  · simpa [decodeCalldataWithMode] using! decodeCalldata_empty_ok (cd := cd) hsz4
 
 theorem decodeScalarWords_uint256_ok {bytes : List UInt8}
     (hlen0 : (bytes.take 32).length = 32) :
@@ -2062,7 +2062,7 @@ theorem decodeScalarWord_bool_none_noncanon {bytes : List UInt8} {start : Nat}
     intro h
     apply hno
     apply u256_inj
-    simpa [UInt256.toNat] using h
+    simpa [UInt256.toNat] using! h
   dsimp only [Option.bind]
   rw [ite_eq_right (by simpa [UInt256.toNat] using hnzNat),
     ite_eq_right (by simpa [UInt256.toNat] using hnoNat)]
@@ -4787,6 +4787,6 @@ theorem copiedSelector {mem out} (hm : 96 ≤ mem.size)
   have hx := copyWindow_extract out mem 0 0 4 0 4 (by decide) hl (by omega) (by decide)
   have ht := congrArg (fun b : ByteArray ↦ b.data.toList) hx
   simpa only [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop,
-    List.drop_zero] using congrArg fromBytesBigEndian ht
+    List.drop_zero] using! congrArg fromBytesBigEndian ht
 
 end Reasoning.Theory

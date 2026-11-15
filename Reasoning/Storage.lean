@@ -369,7 +369,7 @@ theorem checkBytesPacked_of_storageLoad_land_one_ne_zero {evm : EVM.State}
     rfl
   have hmod : header.toNat % 2 = 1 := by
     have h := congrArg UInt256.toNat hlandOne
-    simpa [uInt256_land_one_toNat] using h
+    simpa [uInt256_land_one_toNat] using! h
   unfold checkBytesPacked
   rw [hload]
   cases header with
@@ -850,7 +850,7 @@ theorem storageLocStore_bool_word_offset0 (evm : EVM.State) (slot word : UInt256
       simpa [UInt256.toNat] using hval
     have hiszero : UInt256.isZero word = ⟨0⟩ := isZero_eq_zero_of_ne hzero
     simp only [wordToElem, hbeq, Bool.false_eq_true, ↓reduceIte]
-    simpa [setBoolOffset0Word, hiszero] using storageLocStore_bool_true_offset0 evm slot
+    simpa [setBoolOffset0Word, hiszero] using! storageLocStore_bool_true_offset0 evm slot
 
 /-- Erasing a storage word preserves lookup at a different storage slot. -/
 theorem storage_getD_erase_ne (storage : Storage) (readSlot writeSlot default : UInt256)
@@ -1003,7 +1003,7 @@ theorem accountStorageStateEq_storage_getD {σ τ : AccountMap}
       ← Std.ExtTreeMap.get?_eq_getElem?, hσ, hτ, Option.option] at hστ ⊢
   all_goals
     have hstorage := congrArg (fun storage => storage.getD slot defaultValue) hστ.1
-    simpa [Std.ExtTreeMap.getD_eq_getD_getElem?] using hstorage
+    simpa [Std.ExtTreeMap.getD_eq_getD_getElem?] using! hstorage
 
 /-- A final insert overwrites any earlier zero-aware write to the same slot. -/
 theorem storage_update_insert_self (storage : Storage) (slot val1 val2 : UInt256) :
@@ -1119,7 +1119,7 @@ theorem solidityDataWordsForwardFrom_append
         (sstoreAccountMap owner τ (solidityBytesDataSlot baseSlot idx)
           (uInt256OfByteArray (bytes.readWithPadding (idx * 32) 32)))
         baseSlot bytes (idx + 1) fuel tail
-      simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using ih
+      simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using! ih
 
 def clearDataWordsForwardFrom (owner : AccountAddress) (τ : AccountMap)
     (base idx : UInt256) : Nat → AccountMap
@@ -1720,7 +1720,7 @@ theorem initState {σ₁ σ₀₁ σ₂ σ₀₂ A I g}
     (hAccounts : σ₁ = σ₂) :
     EVMStateEquiv (initState σ₁ σ₀₁ g A I)
       (initState σ₂ σ₀₂ g A I) :=
-  ⟨rfl, by simpa [initState] using hAccounts⟩
+  ⟨rfl, by simpa [initState] using! hAccounts⟩
 
 theorem storageLoad {evm₁ evm₂ : EVM.State} (h : EVMStateEquiv evm₁ evm₂)
     {addr₁ addr₂ : AccountAddress} (haddr : addr₁ = addr₂) (slot : UInt256) :
@@ -2125,7 +2125,7 @@ theorem sstoreAccountMap_storage_getD_self_zero_present
     Std.ExtTreeMap.getElem?_insert_self]
   by_cases hzero : (val == (default : UInt256)) = true
   · have hval : val = (⟨0⟩ : UInt256) := by
-      simpa using eq_of_beq hzero
+      simpa using! eq_of_beq hzero
     subst val
     simp [hzero]
   · have hfalse : (val == (default : UInt256)) = false := by

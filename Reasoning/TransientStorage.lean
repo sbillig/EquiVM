@@ -369,7 +369,7 @@ theorem transientLocStore_bool_word_offset0 (evm : EVM.State) (slot word : UInt2
       simpa [UInt256.toNat] using hval
     have hiszero : UInt256.isZero word = ⟨0⟩ := isZero_eq_zero_of_ne hzero
     simp only [wordToElem, hbeq, Bool.false_eq_true, ↓reduceIte]
-    simpa [setBoolOffset0Word, hiszero] using transientLocStore_bool_true_offset0 evm slot
+    simpa [setBoolOffset0Word, hiszero] using! transientLocStore_bool_true_offset0 evm slot
 
 
 theorem transientLocStore_uint256_int (evm : EVM.State) (slot : UInt256) (n : Int) :
@@ -625,7 +625,7 @@ theorem tstoreAccountMap_tstorage_getD_self_zero_present
     Std.ExtTreeMap.getElem?_insert_self]
   by_cases hzero : (val == (default : UInt256)) = true
   · have hval : val = (⟨0⟩ : UInt256) := by
-      simpa using eq_of_beq hzero
+      simpa using! eq_of_beq hzero
     subst val
     simp [hzero]
   · have hfalse : (val == (default : UInt256)) = false := by

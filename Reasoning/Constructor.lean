@@ -112,7 +112,7 @@ theorem emptyConstructorCorrect_of_RDret
   have hrd := hrun (σ := σ) (σ₀ := σ₀)
       (A := A) (I := I) (g := Sat256.ofUInt256 g) hcode
   rcases hrd.xiResult hcode with hoog | ⟨g', A', hsuccess⟩
-  · exact typedConstructorRefinementFor.outOfGas (by simpa using hoog)
+  · exact typedConstructorRefinementFor.outOfGas (by simpa using! hoog)
   · refine typedConstructorRefinementFor.execution hsuccess
       (emptySteleCtorExec (cfg := cfg) (contract := contract)
         (σ := σ) (σ₀ := σ₀) (g := g) (A := A) (I := I)
@@ -189,8 +189,8 @@ theorem RDrev.constructorRefinementEmptyParams {cfg : Config} {decl : ContractDe
     (himm : decl.immutables = [] := by rfl) :
     typedConstructorRefinementFor cfg decl [] σ σ₀ g A I (fun _ => runtime) := by
   rcases rd.xiResult hcode with hoog | ⟨g', o, hxi⟩
-  · exact typedConstructorRefinementFor.outOfGas (by simpa using hoog)
-  · exact typedConstructorRefinementFor.execution (by simpa using hxi)
+  · exact typedConstructorRefinementFor.outOfGas (by simpa using! hoog)
+  · exact typedConstructorRefinementFor.execution (by simpa using! hxi)
       (steleEmptyParamsCtorExec_of_body hparams hbody himm) (ctorResultEquiv.revert rfl rfl)
       (ctorImmutablesFit_noImmutables himm)
 

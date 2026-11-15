@@ -1727,7 +1727,7 @@ theorem RD.mstore {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : Stat
   · exact Or.inl hoog
   · have hmcS : memoryExpansionCost s .MSTORE = mcost := by
       simpa only [memoryExpansionCost, memoryExpansionCost.μᵢ', haw, hstk,
-        List.getElem!_cons_zero, M] using hmc
+        List.getElem!_cons_zero, M] using! hmc
     have st := mstore_xstep hcode hpc hdec hstk hov
     rw [hmcS] at st
     by_cases gg : g.toNat < C + (mcost + 3)
@@ -1775,7 +1775,7 @@ theorem RD.mstore8 {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : Sta
   · exact Or.inl hoog
   · have hmcS : memoryExpansionCost s .MSTORE8 = mcost := by
       simpa only [memoryExpansionCost, memoryExpansionCost.μᵢ', haw, hstk,
-        List.getElem!_cons_zero, M] using hmc
+        List.getElem!_cons_zero, M] using! hmc
     have st := mstore8_xstep hcode hpc hdec hstk hov
     rw [hmcS] at st
     by_cases gg : g.toNat < C + (mcost + 3)
@@ -2007,7 +2007,7 @@ theorem RD.mload {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State
   · exact Or.inl hoog
   · have hmcS : memoryExpansionCost s .MLOAD = mcost := by
       simpa only [memoryExpansionCost, memoryExpansionCost.μᵢ', haw, hstk,
-        List.getElem!_cons_zero, M] using hmc
+        List.getElem!_cons_zero, M] using! hmc
     have st := mload_xstep hcode hpc hdec hstk hov
     rw [hmcS] at st
     by_cases gg : g.toNat < C + (mcost + 3)
@@ -4903,7 +4903,7 @@ private theorem Xi_error_of_X_sat
             (initState σ σ₀ g A I) = .error e) :
     Ξ σ σ₀ g.toUInt256 A I = .error e :=
   Xi_error_of_X (g := g.toUInt256) (by
-    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using h)
+    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! h)
 
 private theorem Xi_revert_of_X_sat
     {σ σ₀ A I} {g' o} {g : Sat256}
@@ -4912,7 +4912,7 @@ private theorem Xi_revert_of_X_sat
           = .ok (.revert g' o)) :
     Ξ σ σ₀ g.toUInt256 A I = .ok (.revert g' o) :=
   Xi_revert_of_X (g := g.toUInt256) (by
-    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using h)
+    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! h)
 
 private theorem Xi_success_of_X_sat
     {σ σ₀ A I} {s' o} {g : Sat256}
@@ -4923,7 +4923,7 @@ private theorem Xi_success_of_X_sat
       = .ok (.success (s'.accountMap, s'.machineState.gasAvailable.toUInt256,
                        s'.substate) o) :=
   Xi_success_of_X (g := g.toUInt256) (by
-    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using h)
+    simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! h)
 
 /-- `RETURN`: terminate, returning `mem[off .. off+len]` (resolved to the literal `oval`).  Turns an
     `RD` cursor into the halting-success terminal `RDret`. -/
@@ -5597,9 +5597,9 @@ theorem RD.reachInvalidHaltXi {σ σ₀ A I} {g : Sat256}
     ∨ Ξ σ σ₀ g.toUInt256 A I = .error .InvalidInstruction := by
   rcases RD.invalidError h hdec with hoog | hinv
   · exact Or.inl (Xi_error_of_X (g := g.toUInt256)
-      (by simpa [Reasoning.Theory.initState, Sat256.ofUInt256, Sat256.toUInt256] using hoog))
+      (by simpa [Reasoning.Theory.initState, Sat256.ofUInt256, Sat256.toUInt256] using! hoog))
   · exact Or.inr (Xi_error_of_X (g := g.toUInt256)
-      (by simpa [Reasoning.Theory.initState, Sat256.ofUInt256, Sat256.toUInt256] using hinv))
+      (by simpa [Reasoning.Theory.initState, Sat256.ofUInt256, Sat256.toUInt256] using! hinv))
 
 /-- `PUSH8` reach combinator (via the width-generic `pushConst`); `bite` pushes `WAD` (`0xde0b…`)
 with `PUSH8`. -/
@@ -5768,10 +5768,10 @@ theorem RDretXiResultAccountMap {σ σ₀ A I} {g : Sat256} {code o : ByteArray}
   rcases h with hOOG | ⟨s, hX, hacc⟩
   · exact Or.inl (Xi_error_of_X (g := g.toUInt256) (by
       rw [← hcode] at hOOG
-      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using hOOG))
+      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! hOOG))
   · have hxi := Xi_success_of_X (g := g.toUInt256) (by
       rw [← hcode] at hX
-      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using hX)
+      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! hX)
     rw [hacc] at hxi
     exact Or.inr ⟨_, _, hxi⟩
 
@@ -5786,11 +5786,11 @@ theorem RDretXiResultAccountMapReordered {σ σ' σ₀ : AccountMap} {A : Substa
   rcases h with hoog | ⟨s, hX, hacc⟩
   · exact Or.inl (Xi_error_of_X (g := g.toUInt256) (by
       rw [← hcode] at hoog
-      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using hoog))
+      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! hoog))
   · have hσ : s.accountMap = σ' := hacc
     have hxi := Xi_success_of_X (g := g.toUInt256) (by
       rw [← hcode] at hX
-      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using hX)
+      simpa [initState, Sat256.ofUInt256, Sat256.toUInt256] using! hX)
     rw [hσ] at hxi
     exact Or.inr ⟨_, _, hxi⟩
 

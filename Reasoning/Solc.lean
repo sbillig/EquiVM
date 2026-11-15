@@ -1553,7 +1553,7 @@ theorem RD.solcInternalCallSetup3 {code : ByteArray} {g : Sat256} {s0 : State}
 theorem fromBytes'_take20_wordLE_solcAddrMask (w : UInt256) :
     fromBytes' ((EVM.Word.toBytesLEWithSizeProof w).1.take 20) =
       (UInt256.land w solcAddrMask).toNat := by
-  simpa [solcAddrMask] using
+  simpa [solcAddrMask] using!
     fromBytes'_take_wordLE_land_mask w 20 (by decide)
 
 set_option maxHeartbeats 1000000 in
@@ -1856,7 +1856,7 @@ theorem RD.solcOneAddressExternalLenOk {σ σ₀ A I} {g : Sat256}
       solcFreePtrMem (UInt256.ofNat 3) ByteArray.empty σ k C := by
   have hlt :
       UInt256.lt (UInt256.sub (UInt256.ofNat I.calldata.size) ⟨4⟩) ⟨32⟩ = ⟨0⟩ := by
-    exact solcDecodeLenCheckOkUnsigned (by simpa using hsz36) hsize
+    exact solcDecodeLenCheckOkUnsigned (by simpa using! hsz36) hsize
   exact RD.solcExternalStaticArgsLenOk hreach hd0 hd1 hd4 hd6 hd7 hd8 hd9 hd11 hd12
     hd13 hd14 hd17 hdecoded hlt
 
@@ -1920,7 +1920,7 @@ theorem RD.solcOneAddressExternalMaskAndJumpMasked {code : ByteArray} {g : Sat25
   have rd15 := rd12.push2 routine hd12 (by evm_ov)
   exact ⟨_, _, by
     simpa [calldataWord, show (⟨4⟩ : UInt256).toNat = 4 from by decide, solcAddrMask]
-      using rd15.jump hd15 hroutine (by evm_ov)⟩
+      using! rd15.jump hd15 hroutine (by evm_ov)⟩
 
 set_option maxHeartbeats 1000000 in
 theorem RD.solcOneAddressExternalMaskAndJump {code : ByteArray} {g : Sat256} {s0 : State}
@@ -2034,7 +2034,7 @@ theorem RD.solcTwoAddressExternalLenOk {σ σ₀ A I} {g : Sat256}
       solcFreePtrMem (UInt256.ofNat 3) ByteArray.empty σ k C := by
   have hlt :
       UInt256.lt (UInt256.sub (UInt256.ofNat I.calldata.size) ⟨4⟩) ⟨64⟩ = ⟨0⟩ := by
-    exact solcDecodeLenCheckOkUnsigned (by simpa using hsz68) hsize
+    exact solcDecodeLenCheckOkUnsigned (by simpa using! hsz68) hsize
   exact RD.solcExternalStaticArgsLenOk hreach hd0 hd1 hd4 hd6 hd7 hd8 hd9 hd11 hd12
     hd13 hd14 hd17 hdecoded hlt
 
@@ -3383,7 +3383,7 @@ theorem RD.solcSingleMappingStoreDebitMemSplit {code : ByteArray} {g : Sat256} {
   refine Or.inl ⟨hperm, ?_⟩
   obtain ⟨_, _, rdOut⟩ := rdBeforeStore.sstore hperm hd30
     (by simp only [List.length_cons]; omega)
-  exact ⟨_, _, by simpa [solcSingleMappingStoreDebitOutPc] using rdOut⟩
+  exact ⟨_, _, by simpa [solcSingleMappingStoreDebitOutPc] using! rdOut⟩
 
 theorem RD.solcSingleMappingStoreDebitMem {code : ByteArray} {g : Sat256} {s0 : State}
     {ee : ExecutionEnv} {k C : ℕ} {pc baseSlot newValue value aux key ret : UInt256}
@@ -3562,7 +3562,7 @@ theorem RD.solcSingleMappingStoreCreditMemSplit {code : ByteArray} {g : Sat256} 
   refine Or.inl ⟨hperm, ?_⟩
   obtain ⟨_, _, rdOut⟩ := rdBeforeStore.sstore hperm hd33
     (by simp only [List.length_cons]; omega)
-  exact ⟨_, _, by simpa [solcSingleMappingStoreCreditOutPc] using rdOut⟩
+  exact ⟨_, _, by simpa [solcSingleMappingStoreCreditOutPc] using! rdOut⟩
 
 theorem RD.solcSingleMappingStoreCreditMem {code : ByteArray} {g : Sat256} {s0 : State}
     {ee : ExecutionEnv} {k C : ℕ} {pc baseSlot newValue value key aux ret : UInt256}
@@ -3713,7 +3713,7 @@ theorem RD.solcNestedMappingStoreInnerHash {code : ByteArray} {g : Sat256} {s0 :
     raw dup1 hd26 (by evm_ov),
     raw dup4 hd27 (by evm_ov)]
   exact ⟨_, _, by
-    simpa [solcNestedMappingStoreInnerHashOutPc] using
+    simpa [solcNestedMappingStoreInnerHashOutPc] using!
       rdInnerHashPrefix.keccak256 0 (solcMappingSlot baseSlot owner)
         (UInt256.ofNat 3) hd28 mem_cost hslot (by native_decide) (by evm_ov)⟩
 
@@ -6548,7 +6548,7 @@ theorem RD.solcUint256ReturnWordDecodeOk {code : ByteArray} {ee : ExecutionEnv}
   have rdPush64 := RD.push1 rdPop2 ⟨64⟩ hPush64 (by omega)
   have rdMload64 := RD.mload 0 ⟨128⟩ aw rdPush64 hMload64
     (by
-      have hM : M aw ⟨64⟩ ⟨32⟩ = aw := by simpa [M] using hMload64Aw
+      have hM : M aw ⟨64⟩ ⟨32⟩ = aw := by simpa [M] using! hMload64Aw
       simp only [hM, Nat.sub_self])
     hMload64Value
     hMload64Aw
@@ -6576,7 +6576,7 @@ theorem RD.solcUint256ReturnWordDecodeOk {code : ByteArray} {ee : ExecutionEnv}
   have rdPopLen := RD.pop rdJumpdest hPopLen (by simp only [List.length_cons]; omega)
   have rdMload128 := RD.mload 0 retWord aw rdPopLen hMload128
     (by
-      have hM : M aw ⟨128⟩ ⟨32⟩ = aw := by simpa [M] using hMload128Aw
+      have hM : M aw ⟨128⟩ ⟨32⟩ = aw := by simpa [M] using! hMload128Aw
       simp only [hM, Nat.sub_self])
     hMload128Value
     hMload128Aw
@@ -6662,7 +6662,7 @@ theorem RD.solcUint256ReturnWordDecodeShortReverts {code : ByteArray} {ee : Exec
   have rdPush64 := RD.push1 rdPop2 ⟨64⟩ hPush64 (by omega)
   have rdMload64 := RD.mload 0 ⟨128⟩ aw rdPush64 hMload64
     (by
-      have hM : M aw ⟨64⟩ ⟨32⟩ = aw := by simpa [M] using hMload64Aw
+      have hM : M aw ⟨64⟩ ⟨32⟩ = aw := by simpa [M] using! hMload64Aw
       simp only [hM, Nat.sub_self])
     hMload64Value
     hMload64Aw

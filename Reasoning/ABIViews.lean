@@ -822,7 +822,7 @@ theorem calldataStartPlus31_toNat
         (calldataWord cd 4).toNat :=
     ulit_toNat' _ hoffSize
   rw [← u256_ofNat_toNat (calldataWord cd 4)]
-  simpa [hoffOfNat] using (uadd3_ofNat_toNat (a := 4)
+  simpa [hoffOfNat] using! (uadd3_ofNat_toNat (a := 4)
     (b := (calldataWord cd 4).toNat)
     (c := 31)
     (by norm_num [UInt256.size])
@@ -875,7 +875,7 @@ theorem calldataPayloadStart_toNat
         (calldataWord cd 4).toNat :=
     ulit_toNat' _ hoffSize
   rw [← u256_ofNat_toNat (calldataWord cd 4)]
-  simpa [hoffOfNat] using (uadd3_ofNat_toNat (a := 4)
+  simpa [hoffOfNat] using! (uadd3_ofNat_toNat (a := 4)
     (b := (calldataWord cd 4).toNat)
     (c := 32)
     (by norm_num [UInt256.size])
@@ -1191,7 +1191,7 @@ theorem recoveredAddress_ne_zero_of_mask_ne_zero {o : ByteArray}
   apply u256_inj
   have hcanon :
       (UInt256.land (UInt256.ofNat recovered) solcAddrMask).toNat < AccountAddress.size := by
-    simpa [AccountAddress.size, EVM.addressModulus] using
+    simpa [AccountAddress.size, EVM.addressModulus] using!
       solcAddrMask_result_canonical (UInt256.ofNat recovered)
   have hval := congrArg Fin.val haddr
   unfold AccountAddress.ofNat at hval
@@ -1270,7 +1270,7 @@ theorem recoveredPaddedAddress_ne_zero_of_mask_ne_zero {o : ByteArray}
   apply u256_inj
   have hcanon :
       (UInt256.land (UInt256.ofNat recovered) solcAddrMask).toNat < AccountAddress.size := by
-    simpa [AccountAddress.size, EVM.addressModulus] using
+    simpa [AccountAddress.size, EVM.addressModulus] using!
       solcAddrMask_result_canonical (UInt256.ofNat recovered)
   have hval := congrArg Fin.val haddr
   unfold AccountAddress.ofNat at hval
@@ -2390,70 +2390,70 @@ theorem packedUint256BoolBytes32_aw_facts {aw fp : UInt256}
       change 32 ≤ 97
       norm_num
   have hawP1_ge : 3 ≤ awP1.toNat := by
-    simpa [awP1] using activeWords_expand_ge3
+    simpa [awP1] using! activeWords_expand_ge3
       (aw := aw) (off := (⟨64⟩ : UInt256)) (len := ⟨32⟩) haw
   have hawP1_small : awP1.toNat * 32 < UInt256.size := by
-    simpa [awP1] using activeWords_expand_mul32_lt_size
+    simpa [awP1] using! activeWords_expand_mul32_lt_size
       (aw := aw) (off := (⟨64⟩ : UInt256)) (len := ⟨32⟩) hawSmall
       (by decide)
   have hawP2_ge : 3 ≤ awP2.toNat := by
-    simpa [awP2] using activeWords_expand_ge3
+    simpa [awP2] using! activeWords_expand_ge3
       (aw := awP1) (off := base) (len := ⟨32⟩) hawP1_ge
   have hawP2_small : awP2.toNat * 32 < UInt256.size := by
-    simpa [awP2] using activeWords_expand_mul32_lt_size
+    simpa [awP2] using! activeWords_expand_mul32_lt_size
       (aw := awP1) (off := base) (len := ⟨32⟩) hawP1_small
       (by
         rw [hbaseNat]
         change fp.toNat + 32 + 32 + 31 < UInt256.size
         omega)
   have hawP3_ge : 3 ≤ awP3.toNat := by
-    simpa [awP3] using activeWords_expand_ge3
+    simpa [awP3] using! activeWords_expand_ge3
       (aw := awP2) (off := fakeBase) (len := ⟨32⟩) hawP2_ge
   have hawP3_small : awP3.toNat * 32 < UInt256.size := by
-    simpa [awP3] using activeWords_expand_mul32_lt_size
+    simpa [awP3] using! activeWords_expand_mul32_lt_size
       (aw := awP2) (off := fakeBase) (len := ⟨32⟩) hawP2_small
       (by
         rw [hfakeBaseNat]
         change fp.toNat + 64 + 32 + 31 < UInt256.size
         omega)
   have hawP4_ge : 3 ≤ awP4.toNat := by
-    simpa [awP4] using activeWords_expand_ge3
+    simpa [awP4] using! activeWords_expand_ge3
       (aw := awP3) (off := secretBase) (len := ⟨32⟩) hawP3_ge
   have hawP4_small : awP4.toNat * 32 < UInt256.size := by
-    simpa [awP4] using activeWords_expand_mul32_lt_size
+    simpa [awP4] using! activeWords_expand_mul32_lt_size
       (aw := awP3) (off := secretBase) (len := ⟨32⟩) hawP3_small
       (by
         rw [hsecretBaseNat]
         change fp.toNat + 65 + 32 + 31 < UInt256.size
         omega)
   have haw1_ge : 3 ≤ aw1.toNat := by
-    simpa [aw1] using activeWords_expand_ge3
+    simpa [aw1] using! activeWords_expand_ge3
       (aw := awP4) (off := (⟨64⟩ : UInt256)) (len := ⟨32⟩) hawP4_ge
   have haw1_small : aw1.toNat * 32 < UInt256.size := by
-    simpa [aw1] using activeWords_expand_mul32_lt_size
+    simpa [aw1] using! activeWords_expand_mul32_lt_size
       (aw := awP4) (off := (⟨64⟩ : UInt256)) (len := ⟨32⟩) hawP4_small
       (by decide)
   have haw2_ge : 3 ≤ aw2.toNat := by
-    simpa [aw2] using activeWords_expand_ge3
+    simpa [aw2] using! activeWords_expand_ge3
       (aw := aw1) (off := fp) (len := ⟨32⟩) haw1_ge
   have haw2_small : aw2.toNat * 32 < UInt256.size := by
-    simpa [aw2] using activeWords_expand_mul32_lt_size
+    simpa [aw2] using! activeWords_expand_mul32_lt_size
       (aw := aw1) (off := fp) (len := ⟨32⟩) haw1_small
       (by
         change fp.toNat + 32 + 31 < UInt256.size
         omega)
   have haw3_ge : 3 ≤ aw3.toNat := by
-    simpa [aw3] using activeWords_expand_ge3
+    simpa [aw3] using! activeWords_expand_ge3
       (aw := aw2) (off := (⟨64⟩ : UInt256)) (len := ⟨32⟩) haw2_ge
   have haw3_small : aw3.toNat * 32 < UInt256.size := by
-    simpa [aw3] using activeWords_expand_mul32_lt_size
+    simpa [aw3] using! activeWords_expand_mul32_lt_size
       (aw := aw2) (off := (⟨64⟩ : UInt256)) (len := ⟨32⟩) haw2_small
       (by decide)
   have haw4_ge : 3 ≤ aw4.toNat := by
-    simpa [aw4] using activeWords_expand_ge3
+    simpa [aw4] using! activeWords_expand_ge3
       (aw := aw3) (off := fp) (len := ⟨32⟩) haw3_ge
   have haw4_small : aw4.toNat * 32 < UInt256.size := by
-    simpa [aw4] using activeWords_expand_mul32_lt_size
+    simpa [aw4] using! activeWords_expand_mul32_lt_size
       (aw := aw3) (off := fp) (len := ⟨32⟩) haw3_small
       (by
         change fp.toNat + 32 + 31 < UInt256.size
