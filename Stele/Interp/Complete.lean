@@ -656,7 +656,7 @@ end
     cannot be imported here). -/
 theorem size_eq_of_beq {a b : ByteArray} (h : (a == b) = true) : a.size = b.size :=
   congrArg ByteArray.size
-    (ByteArray.ext (eq_of_beq (by simpa [BEq.beq, ByteArray.instBEq] using h)))
+    (ByteArray.ext (eq_of_beq (show (a.data == b.data) = true from h)))
 
 /-- Empty calldata matches no selector: a selector has four bytes. -/
 theorem selectorDispatchMsg_eq_none_of_size {contract : ContractDecl} {calldata : ByteArray}
