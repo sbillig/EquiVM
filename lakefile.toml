@@ -44,8 +44,8 @@ root = "Tests.DiffTest.Main"
 # name = "equivm"
 # root = "EquiVM"
 
-# EVMLean's `fe-stack` branch (`clz` and `precompiles`).
+# EVMLean's `lean-4.35` branch (`fe-stack` on Lean 4.35, with EthLib).
 [[require]]
 name = "evmlean"
 git = "https://github.com/sbillig/EVMLean.git"
-rev = "cebfdd79d591f3cb62d9e494fe1845fe83d72545"
+rev = "40343f056588cbbc42a9e55825681bf78cd25c2e"
