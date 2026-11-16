@@ -42,7 +42,7 @@ theorem typedCallBridge {code : ByteArray} {I : ExecutionEnv} {g : Sat256} {s0 :
       (σ' = σ ∨ ∃ (A_in : Substate) (callGas g' : UInt256) (A' : Substate),
         (σ', g', A', z, out) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat I.codeOwner)) I.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute I.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat I.gasPrice) ⟨0⟩ ⟨0⟩
           (mem.readWithPadding inOffset.toNat inSize.toNat) (I.depth + 1) I.header I.blobVersionedHashes I.blocks I.perm) := by
   by_cases hd : I.depth = 1024
@@ -66,7 +66,7 @@ theorem typedCallBridge {code : ByteArray} {I : ExecutionEnv} {g : Sat256} {s0 :
     have hΘ' : (σ', g'', A', z, out) =
         Ethereum.EVM.Θ evm.accountMap evm.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat evm.executionEnv.codeOwner)) evm.executionEnv.sender
-          (AccountAddress.ofUInt256 target) (toExecute evm.accountMap (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute evm.executionEnv.header.fork evm.accountMap (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat evm.executionEnv.gasPrice) ⟨0⟩ ⟨0⟩
           (mem.readWithPadding inOffset.toNat inSize.toNat) (evm.executionEnv.depth + 1)
           evm.executionEnv.header evm.executionEnv.blobVersionedHashes evm.executionEnv.blocks
@@ -115,7 +115,7 @@ theorem typedStaticCallBridge {code : ByteArray} {I : ExecutionEnv} {g : Sat256}
     have hΘ' : (σ', g'', A', z, out) =
         Ethereum.EVM.Θ evm.accountMap evm.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat evm.executionEnv.codeOwner)) evm.executionEnv.sender
-          (AccountAddress.ofUInt256 target) (toExecute evm.accountMap (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute evm.executionEnv.header.fork evm.accountMap (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat evm.executionEnv.gasPrice) ⟨0⟩ ⟨0⟩
           (mem.readWithPadding inOffset.toNat inSize.toNat) (evm.executionEnv.depth + 1)
           evm.executionEnv.header evm.executionEnv.blobVersionedHashes evm.executionEnv.blocks
@@ -138,7 +138,7 @@ theorem bytesToWord_take32_retWord (out : ByteArray) :
 theorem decodeReturn_uint256_ok (out : ByteArray) (h32 : 32 ≤ out.size) (hbig : out.size < 2 ^ 255) :
     ABI.decodeReturnValue? abiUInt256 out = some (uint256Value (retWord out)) := by
   have htlen : out.toList.length = out.size := by
-    rw [byteArray_toList_eq, Array.length_toList]; rfl
+    rw [Theory.byteArray_toList_eq, Array.length_toList]; rfl
   have htake : (out.toList.take 32).length = 32 := by
     rw [List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
@@ -150,7 +150,7 @@ theorem decodeReturn_uint256_ok (out : ByteArray) (h32 : 32 ≤ out.size) (hbig 
 theorem decodeReturn_uint256_short (out : ByteArray) (h : out.size < 32) :
     ABI.decodeReturnValue? abiUInt256 out = none := by
   have htlen : out.toList.length = out.size := by
-    rw [byteArray_toList_eq, Array.length_toList]; rfl
+    rw [Theory.byteArray_toList_eq, Array.length_toList]; rfl
   unfold ABI.decodeReturnValue?
   rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega),
     decodeScalarWords_uint256_none_short (by rw [htlen]; omega)]
@@ -159,7 +159,7 @@ theorem decodeReturn_bool_zero (out : ByteArray) (h32 : 32 ≤ out.size) (hbig :
     (hw : retWord out = ⟨0⟩) :
     ABI.decodeReturnValue? abiBool out = some (.bool false) := by
   have htlen : out.toList.length = out.size := by
-    rw [byteArray_toList_eq, Array.length_toList]; rfl
+    rw [Theory.byteArray_toList_eq, Array.length_toList]; rfl
   have htake : ((out.toList.drop 0).take 32).length = 32 := by
     rw [List.drop_zero, List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
@@ -173,7 +173,7 @@ theorem decodeReturn_bool_one (out : ByteArray) (h32 : 32 ≤ out.size) (hbig : 
     (hw : retWord out = ⟨1⟩) :
     ABI.decodeReturnValue? abiBool out = some (.bool true) := by
   have htlen : out.toList.length = out.size := by
-    rw [byteArray_toList_eq, Array.length_toList]; rfl
+    rw [Theory.byteArray_toList_eq, Array.length_toList]; rfl
   have htake : ((out.toList.drop 0).take 32).length = 32 := by
     rw [List.drop_zero, List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
@@ -187,7 +187,7 @@ theorem decodeReturn_bool_noncanon (out : ByteArray) (h32 : 32 ≤ out.size) (hb
     (hnz : retWord out ≠ ⟨0⟩) (hno : retWord out ≠ ⟨1⟩) :
     ABI.decodeReturnValue? abiBool out = none := by
   have htlen : out.toList.length = out.size := by
-    rw [byteArray_toList_eq, Array.length_toList]; rfl
+    rw [Theory.byteArray_toList_eq, Array.length_toList]; rfl
   have htake : ((out.toList.drop 0).take 32).length = 32 := by
     rw [List.drop_zero, List.length_take, htlen]; omega
   have hword := bytesToWord_take32_retWord out
@@ -200,7 +200,7 @@ theorem decodeReturn_bool_noncanon (out : ByteArray) (h32 : 32 ≤ out.size) (hb
 theorem decodeReturn_bool_short (out : ByteArray) (h : out.size < 32) :
     ABI.decodeReturnValue? abiBool out = none := by
   have htlen : out.toList.length = out.size := by
-    rw [byteArray_toList_eq, Array.length_toList]; rfl
+    rw [Theory.byteArray_toList_eq, Array.length_toList]; rfl
   unfold ABI.decodeReturnValue?
   rw [decodeReturnValues_scalarWords_eq (by decide), ite_eq_right (by rw [htlen]; omega)]
   simp only [decodeScalarWords?]

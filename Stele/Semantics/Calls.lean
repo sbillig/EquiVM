@@ -59,7 +59,7 @@ inductive callViaEVM (evm : EVM.State) (target : EVM.Address)
             evm.executionEnv.codeOwner  -- sender (msg.sender): `this`, as a CALL does
             evm.executionEnv.sender      -- original transactor (tx.origin)
             target
-            (Ethereum.toExecute evm.accountMap target) -- this is the code
+            (Ethereum.toExecute evm.executionEnv.header.fork evm.accountMap target) -- this is the code
             callGas
             (.ofNat evm.executionEnv.gasPrice)
             valueWord -- actual value sent
@@ -101,7 +101,7 @@ inductive delegateCallViaEVM (evm : EVM.State) (target : EVM.Address)
             evm.executionEnv.source
             evm.executionEnv.sender
             evm.executionEnv.codeOwner
-            (Ethereum.toExecute evm.accountMap target)
+            (Ethereum.toExecute evm.executionEnv.header.fork evm.accountMap target)
             callGas
             (.ofNat evm.executionEnv.gasPrice)
             (⟨0⟩ : EVM.Word)

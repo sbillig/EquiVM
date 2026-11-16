@@ -3378,7 +3378,7 @@ theorem RD.call {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) ⟨0⟩ ⟨0⟩
           (mem.readWithPadding inOffset.toNat inSize.toNat) (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)
@@ -3445,7 +3445,7 @@ theorem RD.call {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
         s.accountMap s.substate with hce
       set θs := Θ s.accountMap s.σ₀ (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
         (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner)) s.executionEnv.sender
-        (AccountAddress.ofUInt256 target) (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+        (AccountAddress.ofUInt256 target) (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
         cg (UInt256.ofNat s.executionEnv.gasPrice) { val := 0 } { val := 0 }
         (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat) (s.executionEnv.depth + 1)
         s.executionEnv.header s.executionEnv.blobVersionedHashes s.executionEnv.blocks
@@ -3461,7 +3461,7 @@ theorem RD.call {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
         rw [hθs]
         exact Theta_returnedGas_le s.accountMap s.σ₀ (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
           (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner)) s.executionEnv.sender
-          (AccountAddress.ofUInt256 target) (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
           cg (UInt256.ofNat s.executionEnv.gasPrice) { val := 0 } { val := 0 }
           (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat) (s.executionEnv.depth + 1)
           s.executionEnv.header s.executionEnv.blobVersionedHashes s.executionEnv.blocks s.executionEnv.perm
@@ -3529,7 +3529,7 @@ theorem RD.call {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0 : State}
           s.accountMap s.σ₀ (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
           (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner))
           s.executionEnv.sender (AccountAddress.ofUInt256 target)
-          (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+          (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
           (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat)
           cg (UInt256.ofNat s.executionEnv.gasPrice) { val := 0 } { val := 0 }
           (s.executionEnv.depth + 1) s.executionEnv.header s.executionEnv.blobVersionedHashes s.executionEnv.blocks s.executionEnv.perm
@@ -3555,7 +3555,7 @@ theorem RD.callEmptyInOut {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) ⟨0⟩ ⟨0⟩
           ByteArray.empty (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)
@@ -3576,7 +3576,7 @@ theorem RD.callEmptyInOut {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s
   have hΘ' : ∃ (g'' : UInt256) (A' : Substate),
       (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
         (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-        (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+        (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
         callGas (UInt256.ofNat ee.gasPrice) ⟨0⟩ ⟨0⟩
         ByteArray.empty (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm := by
     rcases hΘ with ⟨g'', A', hΘeq⟩
@@ -3610,7 +3610,7 @@ theorem RD.callValueMadeOr {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) valueWord valueWord
           (mem.readWithPadding inOffset.toNat inSize.toNat) (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)
@@ -3696,7 +3696,7 @@ theorem RD.callValueMadeOr {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {
       set cg := UInt256.ofNat G with hcg
       set θs := Θ s.accountMap s.σ₀ (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
         (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner)) s.executionEnv.sender
-        (AccountAddress.ofUInt256 target) (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+        (AccountAddress.ofUInt256 target) (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
         cg (UInt256.ofNat s.executionEnv.gasPrice) valueWord valueWord
         (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat) (s.executionEnv.depth + 1)
         s.executionEnv.header s.executionEnv.blobVersionedHashes s.executionEnv.blocks
@@ -3709,7 +3709,7 @@ theorem RD.callValueMadeOr {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {
         rw [hθs]
         exact Theta_returnedGas_le s.accountMap s.σ₀ (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
           (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner)) s.executionEnv.sender
-          (AccountAddress.ofUInt256 target) (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
           cg (UInt256.ofNat s.executionEnv.gasPrice) valueWord valueWord
           (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat) (s.executionEnv.depth + 1)
           s.executionEnv.header s.executionEnv.blobVersionedHashes s.executionEnv.blocks s.executionEnv.perm
@@ -3768,7 +3768,7 @@ theorem RD.callValueMadeOr {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {
           s.accountMap s.σ₀ (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
           (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner))
           s.executionEnv.sender (AccountAddress.ofUInt256 target)
-          (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+          (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
           (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat)
           cg (UInt256.ofNat s.executionEnv.gasPrice) valueWord valueWord
           (s.executionEnv.depth + 1) s.executionEnv.header s.executionEnv.blobVersionedHashes s.executionEnv.blocks s.executionEnv.perm
@@ -3793,7 +3793,7 @@ theorem RD.callValueMade {code : ByteArray} {ee : ExecutionEnv} {g : Sat256} {s0
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) valueWord valueWord
           (mem.readWithPadding inOffset.toNat inSize.toNat) (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)
@@ -3821,7 +3821,7 @@ theorem RD.callValueMadeEmptyInOutOr {code : ByteArray} {ee : ExecutionEnv} {g :
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) valueWord valueWord
           ByteArray.empty (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)
@@ -3842,7 +3842,7 @@ theorem RD.callValueMadeEmptyInOutOr {code : ByteArray} {ee : ExecutionEnv} {g :
   have hΘ' : ∃ (g'' : UInt256) (A' : Substate),
       (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
         (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-        (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+        (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
         callGas (UInt256.ofNat ee.gasPrice) valueWord valueWord
         ByteArray.empty (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm := by
     rcases hΘ with ⟨g'', A', hΘeq⟩
@@ -3873,7 +3873,7 @@ theorem RD.callValueMadeEmptyInOut {code : ByteArray} {ee : ExecutionEnv} {g : S
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) valueWord valueWord
           ByteArray.empty (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks ee.perm)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)

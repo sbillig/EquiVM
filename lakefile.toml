@@ -48,4 +48,4 @@ root = "Tests.DiffTest.Main"
 [[require]]
 name = "evmlean"
 git = "https://github.com/sbillig/EVMLean.git"
-rev = "40343f056588cbbc42a9e55825681bf78cd25c2e"
+rev = "302bda8ba323ec5ae8618f33bee70a6db0d73607"

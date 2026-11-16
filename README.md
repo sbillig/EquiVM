@@ -156,6 +156,12 @@ The port changes two definitions; everything else is proof repair.
   for the same reason: `simp` could no longer instantiate `f : Primop.Binary` with an operation
   such as `UInt256.add`.
 
+EVMLean `302bda8` makes the precompile set depend on the block's fork (`toExecute fork σ a`,
+`π fork`, `A0 fork`; P256VERIFY at `0x100` under `Osaka`). Stele's call semantics
+(`callViaEVM`, `delegateCallViaEVM` in `Stele/Semantics/Calls.lean`, `thetaCall` in
+`Stele/Interp.lean`) pass the caller's `executionEnv.header.fork`, as EVMLean's `call` does, and
+`toExecute_ecrecover_precompile` takes the fork.
+
 ## Proving a contract correct
 
 To prove a new contract correct, create a new directory following the template

@@ -6974,7 +6974,7 @@ theorem RD.solcStaticcall {code : ByteArray} {ee : ExecutionEnv} {g : Sat256}
       (∃ (g'' : UInt256) (A' : Substate),
         (σ', g'', A', z, o) = Ethereum.EVM.Θ σ s0.σ₀ A_in
           (AccountAddress.ofUInt256 (UInt256.ofNat ee.codeOwner)) ee.sender
-          (AccountAddress.ofUInt256 target) (toExecute σ (AccountAddress.ofUInt256 target))
+          (AccountAddress.ofUInt256 target) (toExecute ee.header.fork σ (AccountAddress.ofUInt256 target))
           callGas (UInt256.ofNat ee.gasPrice) ⟨0⟩ ⟨0⟩
           (mem.readWithPadding inOffset.toNat inSize.toNat) (ee.depth + 1) ee.header ee.blobVersionedHashes ee.blocks false)
       ∧ RD code ee g s0 (pc + ⟨1⟩) ((if z then ⟨1⟩ else ⟨0⟩) :: t)
@@ -7040,7 +7040,7 @@ theorem RD.solcStaticcall {code : ByteArray} {ee : ExecutionEnv} {g : Sat256}
         (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
         (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner))
         s.executionEnv.sender (AccountAddress.ofUInt256 target)
-        (toExecute s.accountMap (AccountAddress.ofUInt256 target)) cg
+        (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target)) cg
         (UInt256.ofNat s.executionEnv.gasPrice) (⟨0⟩ : UInt256) (⟨0⟩ : UInt256)
         (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat)
         (s.executionEnv.depth + 1) s.executionEnv.header s.executionEnv.blobVersionedHashes
@@ -7057,7 +7057,7 @@ theorem RD.solcStaticcall {code : ByteArray} {ee : ExecutionEnv} {g : Sat256}
           (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
           (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner))
           s.executionEnv.sender (AccountAddress.ofUInt256 target)
-          (toExecute s.accountMap (AccountAddress.ofUInt256 target)) cg
+          (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target)) cg
           (UInt256.ofNat s.executionEnv.gasPrice) (⟨0⟩ : UInt256) (⟨0⟩ : UInt256)
           (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat)
           (s.executionEnv.depth + 1) s.executionEnv.header s.executionEnv.blobVersionedHashes
@@ -7116,7 +7116,7 @@ theorem RD.solcStaticcall {code : ByteArray} {ee : ExecutionEnv} {g : Sat256}
           (s.addAccessedAccount (AccountAddress.ofUInt256 target)).substate
           (AccountAddress.ofUInt256 (UInt256.ofNat ↑s.executionEnv.codeOwner))
           s.executionEnv.sender (AccountAddress.ofUInt256 target)
-          (toExecute s.accountMap (AccountAddress.ofUInt256 target))
+          (toExecute s.executionEnv.header.fork s.accountMap (AccountAddress.ofUInt256 target))
           (s.machineState.memory.readWithPadding inOffset.toNat inSize.toNat)
           cg (UInt256.ofNat s.executionEnv.gasPrice) (⟨0⟩ : UInt256) (⟨0⟩ : UInt256)
           (s.executionEnv.depth + 1) s.executionEnv.header s.executionEnv.blobVersionedHashes

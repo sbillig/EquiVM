@@ -87,13 +87,13 @@ def thetaCall (gas : UInt256) (substate : Substate) (req : CallRequest) (evm : E
   match req.kind with
   | .delegatecall =>
       let (σ', _, A', z, o) := Θ evm.accountMap evm.σ₀ substate env.source env.sender env.codeOwner
-        (toExecute evm.accountMap req.target) gas (.ofNat env.gasPrice) ⟨0⟩ env.weiValue
+        (toExecute env.header.fork evm.accountMap req.target) gas (.ofNat env.gasPrice) ⟨0⟩ env.weiValue
         req.calldata (env.depth + 1) env.header env.blobVersionedHashes env.blocks env.perm
       ⟨z, σ', A', o⟩
   | _ =>
       let valueWord := EVM.wordOfInt req.value
       let (σ', _, A', z, o) := Θ evm.accountMap evm.σ₀ substate env.codeOwner env.sender req.target
-        (toExecute evm.accountMap req.target) gas (.ofNat env.gasPrice) valueWord valueWord
+        (toExecute env.header.fork evm.accountMap req.target) gas (.ofNat env.gasPrice) valueWord valueWord
         req.calldata (env.depth + 1) env.header env.blobVersionedHashes env.blocks req.calleePerm
       ⟨z, σ', A', o⟩
 
